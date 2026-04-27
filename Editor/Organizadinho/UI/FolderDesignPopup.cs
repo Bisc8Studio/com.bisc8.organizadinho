@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using Organizadinho.Editor.Storage;
+using Organizadinho.Editor.Utilities;
 
 namespace Organizadinho.Editor.UI
 {
@@ -30,10 +31,7 @@ public class FolderDesignPopup : PopupWindowContent
         float ln = EditorGUIUtility.singleLineHeight + 2f;
         float h = 8f;
         h += ln + 2f;
-        h += 7f;
-        h += ln;
-        h += ln;
-        h += ln;
+        h += ln * 5f;
         h += 7f;
         h += ln;
         h += 90f;
@@ -49,27 +47,31 @@ public class FolderDesignPopup : PopupWindowContent
         string folderName = System.IO.Path.GetFileName(_path);
 
         GUILayout.Space(4f);
-        EditorGUILayout.LabelField($"  📁  {folderName}", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("Folder  " + folderName, EditorStyles.boldLabel);
         DrawHRule();
 
-        EditorGUI.BeginChangeCheck();
+        var currentHue = _entry.hue;
+        var newHue = PastelColorSlider.DrawHueSlider(
+            "Base Color",
+            currentHue,
+            "Folder preview");
 
-        bool newHasColor = EditorGUILayout.Toggle("Enable Color", _entry.hasColor);
+        EditorGUI.BeginChangeCheck();
+        bool newHasColor = EditorGUILayout.Toggle("Aplly Color", _entry.hasColor);
 
         EditorGUI.BeginDisabledGroup(!newHasColor);
-        Color newColor = EditorGUILayout.ColorField("Folder Color", _entry.color);
-
         bool newPropagate = EditorGUILayout.Toggle(
-            new GUIContent("  └ Apply to sub-folders", "All child folders inherit this colour"),
+            new GUIContent("Apply to sub-folders", "All child folders inherit this pastel style"),
             _entry.propagateChildren);
         EditorGUI.EndDisabledGroup();
 
-        if (EditorGUI.EndChangeCheck())
+        if (EditorGUI.EndChangeCheck() || !Mathf.Approximately(currentHue, newHue))
         {
             _entry.hasColor = newHasColor;
-            _entry.color = newColor;
             _entry.propagateChildren = newPropagate;
+            _entry.hue = PastelColorUtility.NormalizeHue(newHue);
             storage.NotifyChanged();
+            editorWindow?.Repaint();
         }
 
         DrawHRule();
@@ -96,11 +98,12 @@ public class FolderDesignPopup : PopupWindowContent
 
     private void DrawIconPicker(FolderDesignStorage storage)
     {
+        var palette = PastelColorUtility.BuildPalette(_entry.hue);
         HierarchyDesignPopup.EnsureIconFolderExists();
         var icons = GetIcons();
 
         EditorGUILayout.LabelField(
-            $"Badge Icon  ({HierarchyDesignPopup.IconFolder}/)",
+            "Badge Icon  (" + HierarchyDesignPopup.IconFolder + "/)",
             EditorStyles.centeredGreyMiniLabel);
 
         _iconScroll = EditorGUILayout.BeginScrollView(_iconScroll, GUILayout.Height(86f));
@@ -120,8 +123,8 @@ public class FolderDesignPopup : PopupWindowContent
             EditorGUILayout.BeginHorizontal();
 
             bool noneSelected = string.IsNullOrEmpty(_entry.iconGuid);
-            GUI.backgroundColor = noneSelected ? new Color(0.4f, 0.7f, 1f) : Color.white;
-            if (GUILayout.Button("✕", GUILayout.Width(iconSize), GUILayout.Height(iconSize)))
+            GUI.backgroundColor = noneSelected ? palette.SelectedColor : Color.white;
+            if (GUILayout.Button("X", GUILayout.Width(iconSize), GUILayout.Height(iconSize)))
             {
                 _entry.iconGuid = "";
                 storage.NotifyChanged();
@@ -133,7 +136,7 @@ public class FolderDesignPopup : PopupWindowContent
             {
                 string iconGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(icon));
                 bool selected = _entry.iconGuid == iconGuid;
-                GUI.backgroundColor = selected ? new Color(0.4f, 0.7f, 1f) : Color.white;
+                GUI.backgroundColor = selected ? palette.SelectedColor : Color.white;
                 if (GUILayout.Button(new GUIContent(icon, icon.name),
                         GUILayout.Width(iconSize), GUILayout.Height(iconSize)))
                 {
@@ -180,7 +183,7 @@ public class FolderDesignPopup : PopupWindowContent
     {
         GUILayout.Space(3f);
         Rect r = EditorGUILayout.GetControlRect(GUILayout.Height(1f));
-        EditorGUI.DrawRect(r, new Color(0.35f, 0.35f, 0.35f, 1f));
+        EditorGUI.DrawRect(r, new Color(0f, 0f, 0f, EditorGUIUtility.isProSkin ? 0.4f : 0.18f));
         GUILayout.Space(3f);
     }
 }

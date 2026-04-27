@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using Organizadinho.Editor.Drawing;
+using Organizadinho.Editor.Utilities;
 using Organizadinho.Runtime;
 
 namespace Organizadinho.Editor.UI
@@ -42,12 +43,10 @@ public class HierarchyDesignPopup : PopupWindowContent
 
         if (_hd != null && _hd.isOrganizer)
         {
+            h += ln * 5f;
             h += ln;
             h += 60f;
-            h += ln * 2f;
             h += ln;
-            h += 2f;
-            h += ln * 2f;
             h += 12f;
             h += ln;
             h += 90f;
@@ -64,7 +63,7 @@ public class HierarchyDesignPopup : PopupWindowContent
     public override void OnGUI(Rect rect)
     {
         GUILayout.Space(4f);
-        EditorGUILayout.LabelField($"  ✦  {_go.name}", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("Organizer  " + _go.name, EditorStyles.boldLabel);
         DrawHorizontalRule();
 
         EditorGUI.BeginChangeCheck();
@@ -77,11 +76,13 @@ public class HierarchyDesignPopup : PopupWindowContent
                 {
                     Undo.AddComponent<HierarchyDesign>(_go);
                     _hd = _go.GetComponent<HierarchyDesign>();
+                    _hd.EnsurePastelData();
                     _hd.isOrganizer = true;
                 }
                 else
                 {
                     Undo.RecordObject(_hd, "Enable Organizer");
+                    _hd.EnsurePastelData();
                     _hd.isOrganizer = true;
                 }
 
@@ -98,11 +99,29 @@ public class HierarchyDesignPopup : PopupWindowContent
             EditorApplication.RepaintHierarchyWindow();
         }
 
+        if (_hd == null || !_hd.isOrganizer)
+            return;
+
+        var currentHue = _hd != null ? _hd.colorHue : PastelColorUtility.DefaultHue;
+        var newHue = PastelColorSlider.DrawHueSlider(
+            "Base Color",
+            currentHue,
+            "Organizer preview");
+        if (_hd != null && !Mathf.Approximately(currentHue, newHue))
+        {
+            Undo.RecordObject(_hd, "Edit Organizer Color");
+            _hd.colorHue = PastelColorUtility.NormalizeHue(newHue);
+            EditorUtility.SetDirty(_hd);
+            HierarchyDesignDrawer.ClearCache();
+            EditorApplication.RepaintHierarchyWindow();
+            editorWindow?.Repaint();
+        }
+
         if (_hd != null && _hd.isOrganizer)
         {
             EditorGUI.BeginChangeCheck();
             bool newProp = EditorGUILayout.Toggle(
-                new GUIContent("  └ color in children", "Aplica cor de fundo (fade) em todos os filhos"),
+                new GUIContent("Color in children", "Aplica a variação pastel em todos os filhos"),
                 _hd.propagateToChildren);
             if (EditorGUI.EndChangeCheck())
             {
@@ -113,22 +132,22 @@ public class HierarchyDesignPopup : PopupWindowContent
             }
         }
 
-        if (_hd == null || !_hd.isOrganizer)
-            return;
-
         GUILayout.Space(4f);
 
+        _hd.EnsurePastelData();
+        var palette = PastelColorUtility.BuildPalette(_hd.colorHue);
         Rect previewRect = EditorGUILayout.GetControlRect(GUILayout.Height(54f));
         GUI.DrawTexture(
             previewRect,
-            HierarchyDesignDrawer.GetPreviewTexture(_hd.backgroundColor),
+            HierarchyDesignDrawer.GetPreviewTexture(palette.BaseColor),
             ScaleMode.StretchToFill);
+
         GUIStyle previewStyle = new GUIStyle
         {
             alignment = TextAnchor.MiddleLeft,
             fontSize = _hd.fontSize,
             fontStyle = FontStyle.Normal,
-            normal = { textColor = _hd.textColor }
+            normal = { textColor = palette.ForegroundColor }
         };
         if (_hd.customFont != null)
             previewStyle.font = _hd.customFont;
@@ -141,21 +160,12 @@ public class HierarchyDesignPopup : PopupWindowContent
         DrawHorizontalRule();
 
         EditorGUI.BeginChangeCheck();
-        Color newBg = EditorGUILayout.ColorField("Background Colour", _hd.backgroundColor);
-        Color newText = EditorGUILayout.ColorField("Text Colour", _hd.textColor);
         int newSize = EditorGUILayout.IntSlider("Font Size", _hd.fontSize, 8, 20);
-        EditorGUILayout.Space(2f);
-        Color newArrow = DrawArrowTintSelector(_hd.arrowTint);
-        Color newIcon = EditorGUILayout.ColorField("Icon Tint", _hd.iconTint);
 
         if (EditorGUI.EndChangeCheck())
         {
             Undo.RecordObject(_hd, "Edit Hierarchy Design");
-            _hd.backgroundColor = newBg;
-            _hd.textColor = newText;
             _hd.fontSize = newSize;
-            _hd.arrowTint = newArrow;
-            _hd.iconTint = newIcon;
             EditorUtility.SetDirty(_hd);
             HierarchyDesignDrawer.ClearCache();
             EditorApplication.RepaintHierarchyWindow();
@@ -168,30 +178,12 @@ public class HierarchyDesignPopup : PopupWindowContent
         DrawIconPicker();
     }
 
-    private static Color DrawArrowTintSelector(Color currentColor)
-    {
-        var labelRect = EditorGUILayout.GetControlRect();
-        labelRect = EditorGUI.PrefixLabel(labelRect, new GUIContent("Arrow Tint"));
-
-        var selectedIndex = GUI.Toolbar(
-            labelRect,
-            IsDarkColor(currentColor) ? 1 : 0,
-            new[] { "White", "Black" });
-
-        return selectedIndex == 1 ? Color.black : Color.white;
-    }
-
-    private static bool IsDarkColor(Color color)
-    {
-        var luminance = (color.r * 0.299f) + (color.g * 0.587f) + (color.b * 0.114f);
-        return luminance < 0.5f;
-    }
-
     private void DrawFontPicker()
     {
+        var palette = PastelColorUtility.BuildPalette(_hd.colorHue);
         EnsureFolderExists(OrganizadinhoResourcesRoot, "Fonts");
         var fonts = GetFolderFonts();
-        EditorGUILayout.LabelField($"Fonte  ({FontFolder}/)", EditorStyles.centeredGreyMiniLabel);
+        EditorGUILayout.LabelField("Font  (" + FontFolder + "/)", EditorStyles.centeredGreyMiniLabel);
 
         _fontScroll = EditorGUILayout.BeginScrollView(_fontScroll, GUILayout.Height(86f));
         if (fonts.Length == 0)
@@ -201,7 +193,7 @@ public class HierarchyDesignPopup : PopupWindowContent
         else
         {
             bool noneSelected = _hd.customFont == null;
-            GUI.backgroundColor = noneSelected ? new Color(0.4f, 0.7f, 1f) : Color.white;
+            GUI.backgroundColor = noneSelected ? palette.SelectedColor : Color.white;
             if (GUILayout.Button("Default", GUILayout.Height(22f)))
             {
                 Undo.RecordObject(_hd, "Clear Custom Font");
@@ -214,7 +206,7 @@ public class HierarchyDesignPopup : PopupWindowContent
             foreach (var font in fonts)
             {
                 bool selected = _hd.customFont == font;
-                GUI.backgroundColor = selected ? new Color(0.4f, 0.7f, 1f) : Color.white;
+                GUI.backgroundColor = selected ? palette.SelectedColor : Color.white;
                 var style = new GUIStyle(GUI.skin.button) { font = font, fontSize = 12 };
                 if (GUILayout.Button(font.name, style, GUILayout.Height(22f)))
                 {
@@ -257,9 +249,10 @@ public class HierarchyDesignPopup : PopupWindowContent
 
     private void DrawIconPicker()
     {
+        var palette = PastelColorUtility.BuildPalette(_hd.colorHue);
         EnsureIconFolderExists();
         var icons = GetFolderIcons();
-        EditorGUILayout.LabelField($"Custom Icon  ({IconFolder}/)", EditorStyles.centeredGreyMiniLabel);
+        EditorGUILayout.LabelField("Custom Icon  (" + IconFolder + "/)", EditorStyles.centeredGreyMiniLabel);
 
         _iconScroll = EditorGUILayout.BeginScrollView(_iconScroll, GUILayout.Height(86f));
         if (icons.Length == 0)
@@ -275,8 +268,8 @@ public class HierarchyDesignPopup : PopupWindowContent
             EditorGUILayout.BeginHorizontal();
 
             bool noneSelected = _hd.customIcon == null;
-            GUI.backgroundColor = noneSelected ? new Color(0.4f, 0.7f, 1f) : Color.white;
-            if (GUILayout.Button("✕", GUILayout.Width(iconSize), GUILayout.Height(iconSize)))
+            GUI.backgroundColor = noneSelected ? palette.SelectedColor : Color.white;
+            if (GUILayout.Button("X", GUILayout.Width(iconSize), GUILayout.Height(iconSize)))
             {
                 Undo.RecordObject(_hd, "Clear Custom Icon");
                 _hd.customIcon = null;
@@ -289,7 +282,7 @@ public class HierarchyDesignPopup : PopupWindowContent
             foreach (var icon in icons)
             {
                 bool selected = _hd.customIcon == icon;
-                GUI.backgroundColor = selected ? new Color(0.4f, 0.7f, 1f) : Color.white;
+                GUI.backgroundColor = selected ? palette.SelectedColor : Color.white;
                 if (GUILayout.Button(new GUIContent(icon, icon.name), GUILayout.Width(iconSize), GUILayout.Height(iconSize)))
                 {
                     Undo.RecordObject(_hd, "Set Custom Icon");
@@ -374,7 +367,7 @@ public class HierarchyDesignPopup : PopupWindowContent
     {
         GUILayout.Space(3f);
         Rect rect = EditorGUILayout.GetControlRect(GUILayout.Height(1f));
-        EditorGUI.DrawRect(rect, new Color(0.35f, 0.35f, 0.35f, 1f));
+        EditorGUI.DrawRect(rect, new Color(0f, 0f, 0f, EditorGUIUtility.isProSkin ? 0.4f : 0.18f));
         GUILayout.Space(3f);
     }
 }
