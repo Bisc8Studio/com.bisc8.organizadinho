@@ -1,0 +1,20 @@
+# JetBrains Rider / IntelliJ
+.idea/
+
+# VS Code
+.vscode/
+
+# Visual Studio
+.vs/
+*.csproj
+*.sln
+*.user
+*.suo
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local tool metadata
+.ai/
