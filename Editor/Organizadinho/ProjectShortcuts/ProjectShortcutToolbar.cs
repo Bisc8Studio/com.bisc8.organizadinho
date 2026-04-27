@@ -31,9 +31,7 @@ internal sealed class ProjectShortcutToolbar : VisualElement
         style.paddingRight = 6f;
         style.paddingTop = 2f;
         style.paddingBottom = 2f;
-        style.backgroundColor = new Color(0.17f, 0.17f, 0.17f, 1f);
-        style.borderBottomColor = new Color(0f, 0f, 0f, 0.35f);
-        style.borderBottomWidth = 1f;
+        ApplyChrome();
 
         _compactSearchButton = new Button(ExpandSearch)
         {
@@ -242,6 +240,13 @@ internal sealed class ProjectShortcutToolbar : VisualElement
         row.Add(label);
 
         button.Add(row);
+    }
+
+    private void ApplyChrome()
+    {
+        style.backgroundColor = new Color(0.17f, 0.17f, 0.17f, 1f);
+        style.borderBottomColor = new Color(0f, 0f, 0f, 0.35f);
+        style.borderBottomWidth = 1f;
     }
 
     private void OnDragUpdated(DragUpdatedEvent evt)

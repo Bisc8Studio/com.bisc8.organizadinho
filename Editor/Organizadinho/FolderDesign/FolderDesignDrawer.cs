@@ -141,35 +141,35 @@ public static class FolderDesignDrawer
 
     private static void OpenPopupForFolder(string guid, string path, Vector2? screenClick)
     {
+        var popup = new FolderDesignPopup(guid, path);
+        var popupSize = popup.GetWindowSize();
         Rect showRect;
         if (screenClick.HasValue)
         {
-            const float popupWidth = 200f;
-            const float popupHeight = 150f;
             var clickPosition = screenClick.Value;
             var window = EditorWindow.mouseOverWindow ?? EditorWindow.focusedWindow;
             if (window != null)
                 clickPosition -= window.position.position;
 
             showRect = new Rect(
-                clickPosition.x - popupWidth * 0.5f,
-                clickPosition.y - popupHeight * 0.5f,
-                popupWidth,
-                popupHeight);
+                clickPosition.x - popupSize.x * 0.5f,
+                clickPosition.y - popupSize.y * 0.5f,
+                popupSize.x,
+                popupSize.y);
         }
         else
         {
             var window = EditorWindow.focusedWindow ?? EditorWindow.mouseOverWindow;
             showRect = window != null
                 ? new Rect(
-                    window.position.x + window.position.width * 0.5f - 140f,
-                    window.position.y + window.position.height * 0.5f - 130f,
+                    window.position.x + window.position.width * 0.5f - popupSize.x * 0.5f,
+                    window.position.y + window.position.height * 0.5f - popupSize.y * 0.5f,
                     1f,
                     1f)
                 : new Rect(500f, 300f, 1f, 1f);
         }
 
-        PopupWindow.Show(showRect, new FolderDesignPopup(guid, path));
+        PopupWindow.Show(showRect, popup);
     }
 }
 }

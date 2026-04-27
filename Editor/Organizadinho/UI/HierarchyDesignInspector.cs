@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 using Organizadinho.Editor.Drawing;
+using Organizadinho.Editor.Utilities;
 using Organizadinho.Runtime;
 
 namespace Organizadinho.Editor.UI
@@ -31,10 +32,12 @@ public class HierarchyDesignInspector : UnityEditor.Editor
 
         if (hd.isOrganizer)
         {
+            hd.EnsureColorData();
+            var palette = ColorPaletteUtility.BuildPalette(hd.colorHue);
             GUILayout.Space(4f);
             Rect previewRect = EditorGUILayout.GetControlRect(GUILayout.Height(28f));
 
-            Texture2D previewTex = HierarchyDesignDrawer.GetPreviewTexture(hd.backgroundColor);
+            Texture2D previewTex = HierarchyDesignDrawer.GetPreviewTexture(palette.BaseColor);
             GUI.DrawTexture(previewRect, previewTex, ScaleMode.StretchToFill);
 
             GUIStyle style = new GUIStyle
@@ -42,7 +45,7 @@ public class HierarchyDesignInspector : UnityEditor.Editor
                 alignment = TextAnchor.MiddleLeft,
                 fontSize = hd.fontSize,
                 fontStyle = hd.fontStyle,
-                normal = { textColor = hd.textColor }
+                normal = { textColor = palette.ForegroundColor }
             };
             if (hd.customFont != null)
                 style.font = hd.customFont;
@@ -54,7 +57,7 @@ public class HierarchyDesignInspector : UnityEditor.Editor
 
             GUILayout.Space(4f);
             Rect rule = EditorGUILayout.GetControlRect(GUILayout.Height(1f));
-            EditorGUI.DrawRect(rule, new Color(0.35f, 0.35f, 0.35f, 1f));
+            EditorGUI.DrawRect(rule, palette.BorderColor);
             GUILayout.Space(4f);
         }
 

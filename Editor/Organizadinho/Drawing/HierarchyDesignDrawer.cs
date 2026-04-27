@@ -3,6 +3,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 using Organizadinho.Editor.UI;
+using Organizadinho.Editor.Utilities;
 using Organizadinho.Runtime;
 
 namespace Organizadinho.Editor.Drawing
@@ -77,6 +78,8 @@ public static class HierarchyDesignDrawer
 
         if (hd != null && hd.isOrganizer)
         {
+            hd.EnsureColorData();
+            var palette = ColorPaletteUtility.BuildPalette(hd.colorHue);
             float bgStartX = selectionRect.x - 28f;
             Rect bgRect = new Rect(bgStartX, selectionRect.y, Screen.width - bgStartX, selectionRect.height);
 
@@ -84,7 +87,7 @@ public static class HierarchyDesignDrawer
             {
                 GUI.DrawTexture(
                     bgRect,
-                    GetOrCreateGradientTexture(hd.backgroundColor, HierarchyDesign.FadeMode.LeftToRight),
+                    GetOrCreateGradientTexture(palette.BaseColor, HierarchyDesign.FadeMode.LeftToRight),
                     ScaleMode.StretchToFill);
             }
 
@@ -96,7 +99,7 @@ public static class HierarchyDesignDrawer
                 if (Event.current.type == EventType.Repaint)
                 {
                     bool hover = toggleRect.Contains(Event.current.mousePosition);
-                    GUI.color = hd.arrowTint;
+                    GUI.color = palette.ForegroundColor;
                     EditorStyles.foldout.Draw(toggleRect, GUIContent.none, hover, false, isExpanded, false);
                     GUI.color = Color.white;
                 }
@@ -117,7 +120,7 @@ public static class HierarchyDesignDrawer
                 if (objIcon != null)
                 {
                     float size = selectionRect.height - 2f;
-                    GUI.color = hd.iconTint;
+                    GUI.color = palette.ForegroundColor;
                     GUI.DrawTexture(
                         new Rect(selectionRect.x, selectionRect.y + 1f, size, size),
                         objIcon,
@@ -134,9 +137,10 @@ public static class HierarchyDesignDrawer
             var parentOrg = FindPropagatingAncestor(go);
             if (parentOrg != null)
             {
+                parentOrg.EnsureColorData();
                 float rowStartX = selectionRect.x - 42f;
                 Rect rowRect = new Rect(rowStartX, selectionRect.y, Screen.width - rowStartX, selectionRect.height);
-                Color childColor = LightenForChildren(parentOrg.backgroundColor);
+                Color childColor = ColorPaletteUtility.BuildPalette(parentOrg.colorHue).ChildrenColor;
                 GUI.DrawTexture(
                     rowRect,
                     GetOrCreateGradientTexture(childColor, HierarchyDesign.FadeMode.LeftToRight),
@@ -154,7 +158,7 @@ public static class HierarchyDesignDrawer
         if (Event.current.type == EventType.Repaint)
         {
             Color dotColor = (hd != null && hd.isOrganizer)
-                ? hd.backgroundColor
+                ? ColorPaletteUtility.BuildPalette(hd.colorHue).BaseColor
                 : new Color(0.5f, 0.5f, 0.5f, 0.25f);
             GUI.DrawTexture(dotRect, GetOrCreateCircleTexture(dotColor), ScaleMode.StretchToFill);
         }
@@ -169,6 +173,7 @@ public static class HierarchyDesignDrawer
 
     private static void DrawCustomLabel(Rect selectionRect, string text, HierarchyDesign hd)
     {
+        var palette = ColorPaletteUtility.BuildPalette(hd.colorHue);
         const float iconWidth = 16f;
         const float gap = 2f;
         Rect labelRect = new Rect(
@@ -178,7 +183,7 @@ public static class HierarchyDesignDrawer
             selectionRect.height);
         GUIStyle style = new GUIStyle(EditorStyles.label)
         {
-            normal = { textColor = hd.textColor },
+            normal = { textColor = palette.ForegroundColor },
             fontStyle = FontStyle.Normal,
             fontSize = hd.fontSize,
             alignment = TextAnchor.MiddleLeft
@@ -187,15 +192,6 @@ public static class HierarchyDesignDrawer
             style.font = hd.customFont;
 
         GUI.Label(labelRect, text, style);
-    }
-
-    private static Color LightenForChildren(Color color)
-    {
-        Color.RGBToHSV(color, out float h, out float s, out float v);
-        v = Mathf.Clamp01(v + 0.15f);
-        s = Mathf.Clamp01(s - 0.08f);
-        Color rgb = Color.HSVToRGB(h, s, v);
-        return new Color(rgb.r, rgb.g, rgb.b, 0.35f);
     }
 
     public static Texture2D GetOrCreateGradientTexture(Color color, HierarchyDesign.FadeMode mode)

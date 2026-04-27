@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using Organizadinho.Editor.Utilities;
 
 namespace Organizadinho.Editor.Storage
 {
@@ -11,8 +12,8 @@ namespace Organizadinho.Editor.Storage
     {
         public string guid = "";
         public bool hasColor;
-        public Color color = new Color(0.23f, 0.43f, 0.65f, 1f);
         public bool propagateChildren;
+        public float hue = ColorPaletteUtility.DefaultHue;
         public string iconGuid = "";
     }
 
@@ -20,8 +21,10 @@ namespace Organizadinho.Editor.Storage
     public class FolderDesignStorage : ScriptableSingleton<FolderDesignStorage>
     {
         private const string ProjectSettingsAssetPath = "ProjectSettings/Organizadinho/FolderDesignStorage.asset";
+        private const int CurrentVersion = 2;
 
         [SerializeField] public List<FolderDesignEntry> entries = new List<FolderDesignEntry>();
+        [SerializeField] private int _storageVersion;
 
         public static event Action Changed;
 
@@ -33,6 +36,7 @@ namespace Organizadinho.Editor.Storage
                 instance.entries = new List<FolderDesignEntry>();
 
             instance.MigrateLegacyEntriesIfNeeded();
+            instance.EnsureEntryVersion();
             return instance;
         }
 
@@ -47,7 +51,11 @@ namespace Organizadinho.Editor.Storage
             if (entry != null)
                 return entry;
 
-            entry = new FolderDesignEntry { guid = folderGuid };
+            entry = new FolderDesignEntry
+            {
+                guid = folderGuid,
+                hue = ColorPaletteUtility.DefaultHue
+            };
             entries.Add(entry);
             return entry;
         }
@@ -127,8 +135,8 @@ namespace Organizadinho.Editor.Storage
                     {
                         guid = legacyEntry.guid,
                         hasColor = legacyEntry.hasColor,
-                        color = legacyEntry.color,
                         propagateChildren = legacyEntry.propagateChildren,
+                        hue = legacyEntry.hue,
                         iconGuid = legacyEntry.iconGuid
                     });
                 }
@@ -137,6 +145,48 @@ namespace Organizadinho.Editor.Storage
                 Changed?.Invoke();
                 EditorApplication.RepaintProjectWindow();
                 break;
+            }
+        }
+
+        private void EnsureEntryVersion()
+        {
+            if (_storageVersion >= CurrentVersion)
+            {
+                NormalizeEntryHues();
+                return;
+            }
+
+            if (entries == null)
+            {
+                entries = new List<FolderDesignEntry>();
+            }
+
+            for (var index = 0; index < entries.Count; index++)
+            {
+                var entry = entries[index];
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                entry.hue = ColorPaletteUtility.DefaultHue;
+            }
+
+            _storageVersion = CurrentVersion;
+            SaveToProjectSettings();
+        }
+
+        private void NormalizeEntryHues()
+        {
+            for (var index = 0; index < entries.Count; index++)
+            {
+                var entry = entries[index];
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                entry.hue = ColorPaletteUtility.NormalizeHue(entry.hue);
             }
         }
     }

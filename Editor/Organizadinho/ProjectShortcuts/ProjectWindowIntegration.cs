@@ -319,6 +319,7 @@ internal static class ProjectWindowIntegration
         var existingHost = root.Q<VisualElement>(ToolbarHostName);
         if (existingHost != null)
         {
+            existingHost.style.backgroundColor = new Color(0.17f, 0.17f, 0.17f, 1f);
             var existingToolbar = existingHost.Q<ProjectShortcutToolbar>();
             if (existingToolbar != null)
             {
