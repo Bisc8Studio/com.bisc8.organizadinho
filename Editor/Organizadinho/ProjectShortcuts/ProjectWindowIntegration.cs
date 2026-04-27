@@ -288,7 +288,13 @@ internal static class ProjectWindowIntegration
         var browsers = GetProjectBrowsers();
         for (var index = 0; index < browsers.Length; index++)
         {
-            TryAttachToolbar(browsers[index]);
+            try
+            {
+                TryAttachToolbar(browsers[index]);
+            }
+            catch
+            {
+            }
         }
     }
 
@@ -299,8 +305,13 @@ internal static class ProjectWindowIntegration
             return;
         }
 
+        if (!IsActiveProjectBrowser(browser))
+        {
+            return;
+        }
+
         var root = browser.rootVisualElement;
-        if (root == null)
+        if (root == null || root.panel == null)
         {
             return;
         }
@@ -342,6 +353,13 @@ internal static class ProjectWindowIntegration
         }
 
         root.Insert(0, host);
+    }
+
+    private static bool IsActiveProjectBrowser(EditorWindow browser)
+    {
+        return browser != null &&
+               (ReferenceEquals(browser, EditorWindow.focusedWindow) ||
+                ReferenceEquals(browser, EditorWindow.mouseOverWindow));
     }
 
     private static void FlushPendingSearchApply()
