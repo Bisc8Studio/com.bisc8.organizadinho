@@ -32,7 +32,23 @@ public class HierarchyDesign : MonoBehaviour
     public Texture2D customIcon = null;
 
 #if UNITY_EDITOR
-    private void OnValidate() => EditorApplication.RepaintHierarchyWindow();
+    public void SyncInspectorVisibility()
+    {
+        var isHidden = (hideFlags & HideFlags.HideInInspector) != 0;
+        if (isHidden)
+        {
+            return;
+        }
+
+        hideFlags |= HideFlags.HideInInspector;
+        EditorUtility.SetDirty(this);
+    }
+
+    private void OnValidate()
+    {
+        SyncInspectorVisibility();
+        EditorApplication.RepaintHierarchyWindow();
+    }
 #endif
 
     private void Awake()

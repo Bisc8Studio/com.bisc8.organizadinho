@@ -77,6 +77,7 @@ public class HierarchyDesignPopup : PopupWindowContent
                 {
                     Undo.AddComponent<HierarchyDesign>(_go);
                     _hd = _go.GetComponent<HierarchyDesign>();
+                    _hd.isOrganizer = true;
                 }
                 else
                 {
@@ -84,13 +85,13 @@ public class HierarchyDesignPopup : PopupWindowContent
                     _hd.isOrganizer = true;
                 }
 
+                _hd.SyncInspectorVisibility();
                 EditorUtility.SetDirty(_hd);
             }
             else if (_hd != null)
             {
-                Undo.RecordObject(_hd, "Disable Organizer");
-                _hd.isOrganizer = false;
-                EditorUtility.SetDirty(_hd);
+                Undo.DestroyObjectImmediate(_hd);
+                _hd = null;
                 HierarchyDesignDrawer.ClearCache();
             }
 
