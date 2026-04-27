@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace Organizadinho.Editor.Utilities
 {
-    internal readonly struct PastelColorPalette
+    internal readonly struct ColorPalette
     {
-        internal PastelColorPalette(
+        internal ColorPalette(
             Color baseColor,
             Color foregroundColor,
             Color toolbarForegroundColor,
@@ -41,7 +41,7 @@ namespace Organizadinho.Editor.Utilities
         internal Color ToolbarColor { get; }
     }
 
-    internal static class PastelColorUtility
+    internal static class ColorPaletteUtility
     {
         internal const float DefaultHue = 0.58f;
         private const float BaseSaturation = 0.34f;
@@ -49,7 +49,7 @@ namespace Organizadinho.Editor.Utilities
         private const float ChildrenSaturation = 0.24f;
         private const float ChildrenValue = 0.99f;
 
-        internal static PastelColorPalette BuildPalette(float hue)
+        internal static ColorPalette BuildPalette(float hue)
         {
             var normalizedHue = Mathf.Repeat(hue, 1f);
             var baseColor = FromHue(normalizedHue, BaseSaturation, BaseValue);
@@ -68,7 +68,7 @@ namespace Organizadinho.Editor.Utilities
             var children = FromHue(normalizedHue, ChildrenSaturation, ChildrenValue);
             children.a = 0.35f;
 
-            return new PastelColorPalette(
+            return new ColorPalette(
                 baseColor,
                 GetReadableTextColor(baseColor),
                 GetReadableTextColor(toolbar),

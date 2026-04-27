@@ -4,7 +4,7 @@ using Organizadinho.Editor.Utilities;
 
 namespace Organizadinho.Editor.UI
 {
-    internal static class PastelColorSlider
+    internal static class ColorHueSlider
     {
         private static Texture2D _gradientTexture;
 
@@ -12,7 +12,7 @@ namespace Organizadinho.Editor.UI
         {
             EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
 
-            var hue = PastelColorUtility.NormalizeHue(currentHue);
+            var hue = ColorPaletteUtility.NormalizeHue(currentHue);
             var sliderRect = GUILayoutUtility.GetRect(1f, 18f, GUILayout.ExpandWidth(true));
 
             if (Event.current.type == EventType.Repaint)
@@ -56,18 +56,18 @@ namespace Organizadinho.Editor.UI
             EditorGUI.DrawRect(handleRect, new Color(0f, 0f, 0f, 0.55f));
             EditorGUI.DrawRect(
                 new Rect(handleRect.x + 1f, handleRect.y + 1f, handleRect.width - 2f, handleRect.height - 2f),
-                PastelColorUtility.GetReadableTextColor(PastelColorUtility.FromHue(hue)));
+                ColorPaletteUtility.GetReadableTextColor(ColorPaletteUtility.FromHue(hue)));
         }
 
         private static void DrawPreview(Rect previewRect, float hue, string previewLabel)
         {
-            var palette = PastelColorUtility.BuildPalette(hue);
+            var palette = ColorPaletteUtility.BuildPalette(hue);
             var swatchRect = new Rect(previewRect.x, previewRect.y + 2f, 26f, previewRect.height - 4f);
             EditorGUI.DrawRect(swatchRect, palette.BaseColor);
             EditorGUI.DrawRect(new Rect(swatchRect.x, swatchRect.yMax - 1f, swatchRect.width, 1f), palette.BorderColor);
 
             var labelRect = new Rect(swatchRect.xMax + 6f, previewRect.y, previewRect.width - swatchRect.width - 6f, previewRect.height);
-            EditorGUI.LabelField(labelRect, string.IsNullOrEmpty(previewLabel) ? "Pastel preview" : previewLabel, EditorStyles.miniLabel);
+            EditorGUI.LabelField(labelRect, string.IsNullOrEmpty(previewLabel) ? "Color preview" : previewLabel, EditorStyles.miniLabel);
         }
 
         private static Texture2D GetGradientTexture()
@@ -87,7 +87,7 @@ namespace Organizadinho.Editor.UI
             for (var index = 0; index < width; index++)
             {
                 var hue = index / (float)(width - 1);
-                _gradientTexture.SetPixel(index, 0, PastelColorUtility.FromHue(hue));
+                _gradientTexture.SetPixel(index, 0, ColorPaletteUtility.FromHue(hue));
             }
 
             _gradientTexture.Apply();

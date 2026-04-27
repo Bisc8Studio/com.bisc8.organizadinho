@@ -13,7 +13,7 @@ namespace Organizadinho.Editor.Storage
         public string guid = "";
         public bool hasColor;
         public bool propagateChildren;
-        public float hue = PastelColorUtility.DefaultHue;
+        public float hue = ColorPaletteUtility.DefaultHue;
         public string iconGuid = "";
     }
 
@@ -54,7 +54,7 @@ namespace Organizadinho.Editor.Storage
             entry = new FolderDesignEntry
             {
                 guid = folderGuid,
-                hue = PastelColorUtility.DefaultHue
+                hue = ColorPaletteUtility.DefaultHue
             };
             entries.Add(entry);
             return entry;
@@ -169,7 +169,7 @@ namespace Organizadinho.Editor.Storage
                     continue;
                 }
 
-                entry.hue = PastelColorUtility.DefaultHue;
+                entry.hue = ColorPaletteUtility.DefaultHue;
             }
 
             _storageVersion = CurrentVersion;
@@ -186,7 +186,7 @@ namespace Organizadinho.Editor.Storage
                     continue;
                 }
 
-                entry.hue = PastelColorUtility.NormalizeHue(entry.hue);
+                entry.hue = ColorPaletteUtility.NormalizeHue(entry.hue);
             }
         }
     }

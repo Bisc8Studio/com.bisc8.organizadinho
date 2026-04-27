@@ -26,7 +26,7 @@ public class HierarchyDesign : MonoBehaviour
     public Texture2D customIcon = null;
     [SerializeField, HideInInspector] private int _dataVersion;
 
-    public void EnsurePastelData()
+    public void EnsureColorData()
     {
         if (_dataVersion < CurrentVersion)
         {
@@ -53,7 +53,7 @@ public class HierarchyDesign : MonoBehaviour
 
     private void OnValidate()
     {
-        EnsurePastelData();
+        EnsureColorData();
         SyncInspectorVisibility();
         EditorApplication.RepaintHierarchyWindow();
     }

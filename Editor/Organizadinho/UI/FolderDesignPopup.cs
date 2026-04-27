@@ -51,7 +51,7 @@ public class FolderDesignPopup : PopupWindowContent
         DrawHRule();
 
         var currentHue = _entry.hue;
-        var newHue = PastelColorSlider.DrawHueSlider(
+        var newHue = ColorHueSlider.DrawHueSlider(
             "Base Color",
             currentHue,
             "Folder preview");
@@ -61,7 +61,7 @@ public class FolderDesignPopup : PopupWindowContent
 
         EditorGUI.BeginDisabledGroup(!newHasColor);
         bool newPropagate = EditorGUILayout.Toggle(
-            new GUIContent("Apply to sub-folders", "All child folders inherit this pastel style"),
+            new GUIContent("Apply to sub-folders", "All child folders inherit this color style"),
             _entry.propagateChildren);
         EditorGUI.EndDisabledGroup();
 
@@ -69,7 +69,7 @@ public class FolderDesignPopup : PopupWindowContent
         {
             _entry.hasColor = newHasColor;
             _entry.propagateChildren = newPropagate;
-            _entry.hue = PastelColorUtility.NormalizeHue(newHue);
+            _entry.hue = ColorPaletteUtility.NormalizeHue(newHue);
             storage.NotifyChanged();
             editorWindow?.Repaint();
         }
@@ -98,7 +98,7 @@ public class FolderDesignPopup : PopupWindowContent
 
     private void DrawIconPicker(FolderDesignStorage storage)
     {
-        var palette = PastelColorUtility.BuildPalette(_entry.hue);
+        var palette = ColorPaletteUtility.BuildPalette(_entry.hue);
         HierarchyDesignPopup.EnsureIconFolderExists();
         var icons = GetIcons();
 

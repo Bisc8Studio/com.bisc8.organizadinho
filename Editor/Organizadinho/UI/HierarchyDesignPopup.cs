@@ -76,13 +76,13 @@ public class HierarchyDesignPopup : PopupWindowContent
                 {
                     Undo.AddComponent<HierarchyDesign>(_go);
                     _hd = _go.GetComponent<HierarchyDesign>();
-                    _hd.EnsurePastelData();
+                    _hd.EnsureColorData();
                     _hd.isOrganizer = true;
                 }
                 else
                 {
                     Undo.RecordObject(_hd, "Enable Organizer");
-                    _hd.EnsurePastelData();
+                    _hd.EnsureColorData();
                     _hd.isOrganizer = true;
                 }
 
@@ -102,15 +102,15 @@ public class HierarchyDesignPopup : PopupWindowContent
         if (_hd == null || !_hd.isOrganizer)
             return;
 
-        var currentHue = _hd != null ? _hd.colorHue : PastelColorUtility.DefaultHue;
-        var newHue = PastelColorSlider.DrawHueSlider(
+        var currentHue = _hd != null ? _hd.colorHue : ColorPaletteUtility.DefaultHue;
+        var newHue = ColorHueSlider.DrawHueSlider(
             "Base Color",
             currentHue,
             "Organizer preview");
         if (_hd != null && !Mathf.Approximately(currentHue, newHue))
         {
             Undo.RecordObject(_hd, "Edit Organizer Color");
-            _hd.colorHue = PastelColorUtility.NormalizeHue(newHue);
+            _hd.colorHue = ColorPaletteUtility.NormalizeHue(newHue);
             EditorUtility.SetDirty(_hd);
             HierarchyDesignDrawer.ClearCache();
             EditorApplication.RepaintHierarchyWindow();
@@ -121,7 +121,7 @@ public class HierarchyDesignPopup : PopupWindowContent
         {
             EditorGUI.BeginChangeCheck();
             bool newProp = EditorGUILayout.Toggle(
-                new GUIContent("Color in children", "Aplica a variação pastel em todos os filhos"),
+                new GUIContent("Color in children", "Aplica a variacao de cor em todos os filhos"),
                 _hd.propagateToChildren);
             if (EditorGUI.EndChangeCheck())
             {
@@ -134,8 +134,8 @@ public class HierarchyDesignPopup : PopupWindowContent
 
         GUILayout.Space(4f);
 
-        _hd.EnsurePastelData();
-        var palette = PastelColorUtility.BuildPalette(_hd.colorHue);
+        _hd.EnsureColorData();
+        var palette = ColorPaletteUtility.BuildPalette(_hd.colorHue);
         Rect previewRect = EditorGUILayout.GetControlRect(GUILayout.Height(54f));
         GUI.DrawTexture(
             previewRect,
@@ -180,7 +180,7 @@ public class HierarchyDesignPopup : PopupWindowContent
 
     private void DrawFontPicker()
     {
-        var palette = PastelColorUtility.BuildPalette(_hd.colorHue);
+        var palette = ColorPaletteUtility.BuildPalette(_hd.colorHue);
         EnsureFolderExists(OrganizadinhoResourcesRoot, "Fonts");
         var fonts = GetFolderFonts();
         EditorGUILayout.LabelField("Font  (" + FontFolder + "/)", EditorStyles.centeredGreyMiniLabel);
@@ -249,7 +249,7 @@ public class HierarchyDesignPopup : PopupWindowContent
 
     private void DrawIconPicker()
     {
-        var palette = PastelColorUtility.BuildPalette(_hd.colorHue);
+        var palette = ColorPaletteUtility.BuildPalette(_hd.colorHue);
         EnsureIconFolderExists();
         var icons = GetFolderIcons();
         EditorGUILayout.LabelField("Custom Icon  (" + IconFolder + "/)", EditorStyles.centeredGreyMiniLabel);

@@ -92,7 +92,7 @@ namespace Organizadinho.Editor.Utilities
             var resolvedStyle = new FolderDesignResolvedStyle(
                 hasDirectConfiguration,
                 colorEntry != null && colorEntry.hasColor,
-                colorEntry != null && colorEntry.hasColor ? PastelColorUtility.FromHue(colorEntry.hue) : default,
+                colorEntry != null && colorEntry.hasColor ? ColorPaletteUtility.FromHue(colorEntry.hue) : default,
                 colorSource,
                 directEntry?.iconGuid);
 
@@ -120,7 +120,7 @@ namespace Organizadinho.Editor.Utilities
                 return Color.clear;
 
             var baseColor = style.IsColorInherited
-                ? Color.Lerp(style.ResolvedColor, PastelColorUtility.GetProjectChromeColor(), 0.42f)
+                ? Color.Lerp(style.ResolvedColor, ColorPaletteUtility.GetProjectChromeColor(), 0.42f)
                 : style.ResolvedColor;
 
             var alpha = style.IsColorInherited ? 0.14f : 0.2f;
@@ -129,7 +129,7 @@ namespace Organizadinho.Editor.Utilities
 
             if (isSelected)
             {
-                baseColor = Color.Lerp(style.ResolvedColor, PastelColorUtility.GetUnitySelectionColor(), 0.52f);
+                baseColor = Color.Lerp(style.ResolvedColor, ColorPaletteUtility.GetUnitySelectionColor(), 0.52f);
                 alpha = 0.28f;
             }
 
@@ -147,7 +147,7 @@ namespace Organizadinho.Editor.Utilities
                 : style.ResolvedColor;
 
             if (isSelected)
-                accent = Color.Lerp(accent, PastelColorUtility.GetUnitySelectionColor(), 0.3f);
+                accent = Color.Lerp(accent, ColorPaletteUtility.GetUnitySelectionColor(), 0.3f);
 
             accent.a = isSelected ? 0.95f : 0.9f;
             return accent;
@@ -159,11 +159,11 @@ namespace Organizadinho.Editor.Utilities
                 return Color.white;
 
             var tint = style.IsColorInherited
-                ? Color.Lerp(style.ResolvedColor, PastelColorUtility.GetProjectChromeColor(), 0.24f)
+                ? Color.Lerp(style.ResolvedColor, ColorPaletteUtility.GetProjectChromeColor(), 0.24f)
                 : style.ResolvedColor;
 
             if (isSelected)
-                tint = Color.Lerp(tint, PastelColorUtility.GetUnitySelectionColor(), 0.18f);
+                tint = Color.Lerp(tint, ColorPaletteUtility.GetUnitySelectionColor(), 0.18f);
 
             tint.a = 1f;
             return tint;
@@ -176,7 +176,7 @@ namespace Organizadinho.Editor.Utilities
                     ? new Color(0.23f, 0.23f, 0.23f, 1f)
                     : new Color(0.84f, 0.84f, 0.84f, 1f);
 
-            var chrome = PastelColorUtility.GetProjectChromeColor();
+            var chrome = ColorPaletteUtility.GetProjectChromeColor();
             var background = style.IsColorInherited
                 ? Color.Lerp(style.ResolvedColor, chrome, 0.35f)
                 : Color.Lerp(style.ResolvedColor, chrome, 0.18f);
@@ -198,7 +198,7 @@ namespace Organizadinho.Editor.Utilities
 
         internal static Color GetReadableTextColor(Color backgroundColor)
         {
-            return PastelColorUtility.GetReadableTextColor(backgroundColor);
+            return ColorPaletteUtility.GetReadableTextColor(backgroundColor);
         }
 
         internal static void Invalidate()

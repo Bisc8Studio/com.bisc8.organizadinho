@@ -78,8 +78,8 @@ public static class HierarchyDesignDrawer
 
         if (hd != null && hd.isOrganizer)
         {
-            hd.EnsurePastelData();
-            var palette = PastelColorUtility.BuildPalette(hd.colorHue);
+            hd.EnsureColorData();
+            var palette = ColorPaletteUtility.BuildPalette(hd.colorHue);
             float bgStartX = selectionRect.x - 28f;
             Rect bgRect = new Rect(bgStartX, selectionRect.y, Screen.width - bgStartX, selectionRect.height);
 
@@ -137,10 +137,10 @@ public static class HierarchyDesignDrawer
             var parentOrg = FindPropagatingAncestor(go);
             if (parentOrg != null)
             {
-                parentOrg.EnsurePastelData();
+                parentOrg.EnsureColorData();
                 float rowStartX = selectionRect.x - 42f;
                 Rect rowRect = new Rect(rowStartX, selectionRect.y, Screen.width - rowStartX, selectionRect.height);
-                Color childColor = PastelColorUtility.BuildPalette(parentOrg.colorHue).ChildrenColor;
+                Color childColor = ColorPaletteUtility.BuildPalette(parentOrg.colorHue).ChildrenColor;
                 GUI.DrawTexture(
                     rowRect,
                     GetOrCreateGradientTexture(childColor, HierarchyDesign.FadeMode.LeftToRight),
@@ -158,7 +158,7 @@ public static class HierarchyDesignDrawer
         if (Event.current.type == EventType.Repaint)
         {
             Color dotColor = (hd != null && hd.isOrganizer)
-                ? PastelColorUtility.BuildPalette(hd.colorHue).BaseColor
+                ? ColorPaletteUtility.BuildPalette(hd.colorHue).BaseColor
                 : new Color(0.5f, 0.5f, 0.5f, 0.25f);
             GUI.DrawTexture(dotRect, GetOrCreateCircleTexture(dotColor), ScaleMode.StretchToFill);
         }
@@ -173,7 +173,7 @@ public static class HierarchyDesignDrawer
 
     private static void DrawCustomLabel(Rect selectionRect, string text, HierarchyDesign hd)
     {
-        var palette = PastelColorUtility.BuildPalette(hd.colorHue);
+        var palette = ColorPaletteUtility.BuildPalette(hd.colorHue);
         const float iconWidth = 16f;
         const float gap = 2f;
         Rect labelRect = new Rect(
