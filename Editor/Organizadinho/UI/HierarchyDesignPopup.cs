@@ -145,7 +145,7 @@ public class HierarchyDesignPopup : PopupWindowContent
         Color newText = EditorGUILayout.ColorField("Text Colour", _hd.textColor);
         int newSize = EditorGUILayout.IntSlider("Font Size", _hd.fontSize, 8, 20);
         EditorGUILayout.Space(2f);
-        Color newArrow = EditorGUILayout.ColorField("Arrow Tint", _hd.arrowTint);
+        Color newArrow = DrawArrowTintSelector(_hd.arrowTint);
         Color newIcon = EditorGUILayout.ColorField("Icon Tint", _hd.iconTint);
 
         if (EditorGUI.EndChangeCheck())
@@ -166,6 +166,25 @@ public class HierarchyDesignPopup : PopupWindowContent
         DrawFontPicker();
         DrawHorizontalRule();
         DrawIconPicker();
+    }
+
+    private static Color DrawArrowTintSelector(Color currentColor)
+    {
+        var labelRect = EditorGUILayout.GetControlRect();
+        labelRect = EditorGUI.PrefixLabel(labelRect, new GUIContent("Arrow Tint"));
+
+        var selectedIndex = GUI.Toolbar(
+            labelRect,
+            IsDarkColor(currentColor) ? 1 : 0,
+            new[] { "White", "Black" });
+
+        return selectedIndex == 1 ? Color.black : Color.white;
+    }
+
+    private static bool IsDarkColor(Color color)
+    {
+        var luminance = (color.r * 0.299f) + (color.g * 0.587f) + (color.b * 0.114f);
+        return luminance < 0.5f;
     }
 
     private void DrawFontPicker()
