@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -16,31 +15,19 @@ namespace Organizadinho.Editor.Storage
         public string iconGuid = "";
     }
 
-    [CreateAssetMenu(fileName = "FolderDesignStorage", menuName = "Hierarchy Design/Folder Design Storage")]
-    public class FolderDesignStorage : ScriptableObject
+    [FilePath("ProjectSettings/Organizadinho/FolderDesignStorage.asset", FilePathAttribute.Location.ProjectFolder)]
+    public class FolderDesignStorage : ScriptableSingleton<FolderDesignStorage>
     {
-        private const string StoragePath = "Packages/com.bisc8.organizadinho/Editor/Organizadinho/Storage/FolderDesignStorage.asset";
-
         [SerializeField] public List<FolderDesignEntry> entries = new List<FolderDesignEntry>();
-
-        private static FolderDesignStorage _instance;
 
         public static event Action Changed;
 
         public static FolderDesignStorage GetOrCreate()
         {
-            if (_instance != null)
-                return _instance;
+            if (instance.entries == null)
+                instance.entries = new List<FolderDesignEntry>();
 
-            _instance = AssetDatabase.LoadAssetAtPath<FolderDesignStorage>(StoragePath);
-            if (_instance != null)
-                return _instance;
-
-            _instance = CreateInstance<FolderDesignStorage>();
-            Directory.CreateDirectory(Path.GetDirectoryName(StoragePath) ?? "Packages/com.bisc8.organizadinho/Editor/Organizadinho/Storage");
-            AssetDatabase.CreateAsset(_instance, StoragePath);
-            AssetDatabase.SaveAssets();
-            return _instance;
+            return instance;
         }
 
         public FolderDesignEntry GetEntry(string folderGuid)
@@ -70,7 +57,7 @@ namespace Organizadinho.Editor.Storage
         {
             EditorUtility.SetDirty(this);
             if (saveAssets)
-                AssetDatabase.SaveAssets();
+                Save(true);
 
             Changed?.Invoke();
             EditorApplication.RepaintProjectWindow();
