@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
@@ -16,6 +17,8 @@ internal static class ProjectWindowIntegration
     private static readonly Type SearchableEditorWindowType;
     private static readonly Type SearchModeType;
     private static readonly MethodInfo ShowFolderContentsMethod;
+    private static readonly MethodInfo SetFolderSelectionMethod;
+    private static readonly MethodInfo SetTwoColumnsMethod;
     private static readonly MethodInfo SetSearchMethod;
     private static readonly MethodInfo SetSearchFilterMethod;
     private static readonly object SearchModeAll;
@@ -35,11 +38,37 @@ internal static class ProjectWindowIntegration
 
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-        ShowFolderContentsMethod = ProjectBrowserType?.GetMethod(
-            "ShowFolderContents",
+        ShowFolderContentsMethod = ProjectBrowserType?.GetMethods(flags)
+            .FirstOrDefault(method =>
+            {
+                if (method.Name != "ShowFolderContents")
+                {
+                    return false;
+                }
+
+                var parameters = method.GetParameters();
+                return parameters.Length == 2 && parameters[1].ParameterType == typeof(bool);
+            });
+
+        SetFolderSelectionMethod = ProjectBrowserType?.GetMethods(flags)
+            .FirstOrDefault(method =>
+            {
+                if (method.Name != "SetFolderSelection")
+                {
+                    return false;
+                }
+
+                var parameters = method.GetParameters();
+                return parameters.Length == 2 &&
+                       parameters[0].ParameterType.IsArray &&
+                       parameters[1].ParameterType == typeof(bool);
+            });
+
+        SetTwoColumnsMethod = ProjectBrowserType?.GetMethod(
+            "SetTwoColumns",
             flags,
             null,
-            new[] { typeof(int), typeof(bool) },
+            Type.EmptyTypes,
             null);
 
         SetSearchMethod = ProjectBrowserType?.GetMethod(
@@ -72,31 +101,135 @@ internal static class ProjectWindowIntegration
         EditorApplication.update += OnEditorUpdate;
     }
 
-    internal static void RevealFolder(UnityEngine.Object folder)
+    internal static void OpenFolder(EditorWindow projectBrowser, UnityEngine.Object folder)
     {
         if (folder == null)
         {
             return;
         }
 
+        if (projectBrowser != null)
+        {
+            OpenFolderInBrowser(projectBrowser, folder);
+            return;
+        }
+
         var browsers = GetProjectBrowsers();
         for (var index = 0; index < browsers.Length; index++)
         {
-            var browser = browsers[index];
-            if (browser == null || ShowFolderContentsMethod == null)
+            OpenFolderInBrowser(browsers[index], folder);
+        }
+    }
+
+    private static void OpenFolderInBrowser(EditorWindow browser, UnityEngine.Object folder)
+    {
+        if (browser == null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (TrySetFolderSelection(browser, folder))
             {
-                continue;
+                browser.Repaint();
+                return;
             }
 
-            try
+            EnsureTwoColumnMode(browser);
+            if (ShowFolderContentsMethod != null)
             {
-                ShowFolderContentsMethod.Invoke(browser, new object[] { folder.GetInstanceID(), true });
+                var folderIdArgument = ConvertFolderIdentifier(
+                    ShowFolderContentsMethod.GetParameters()[0].ParameterType,
+                    folder.GetInstanceID());
+                ShowFolderContentsMethod.Invoke(browser, new[] { folderIdArgument, (object)true });
                 browser.Repaint();
             }
-            catch
-            {
-            }
         }
+        catch
+        {
+        }
+    }
+
+    private static bool TrySetFolderSelection(EditorWindow browser, UnityEngine.Object folder)
+    {
+        if (SetFolderSelectionMethod == null)
+        {
+            return false;
+        }
+
+        var parameters = SetFolderSelectionMethod.GetParameters();
+        var folderArrayArgument = Array.CreateInstance(
+            parameters[0].ParameterType.GetElementType(),
+            1);
+        folderArrayArgument.SetValue(
+            ConvertFolderIdentifier(parameters[0].ParameterType.GetElementType(), folder.GetInstanceID()),
+            0);
+
+        SetFolderSelectionMethod.Invoke(browser, new object[] { folderArrayArgument, true });
+        return true;
+    }
+
+    private static void EnsureTwoColumnMode(EditorWindow browser)
+    {
+        if (browser == null || IsTwoColumnMode(browser))
+        {
+            return;
+        }
+
+        if (SetTwoColumnsMethod != null)
+        {
+            SetTwoColumnsMethod.Invoke(browser, null);
+            return;
+        }
+
+        var serializedObject = new SerializedObject(browser);
+        var viewModeProperty = serializedObject.FindProperty("m_ViewMode");
+        if (viewModeProperty == null || viewModeProperty.intValue == 1)
+        {
+            return;
+        }
+
+        viewModeProperty.intValue = 1;
+        serializedObject.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static bool IsTwoColumnMode(EditorWindow browser)
+    {
+        if (browser == null)
+        {
+            return false;
+        }
+
+        var serializedObject = new SerializedObject(browser);
+        var viewModeProperty = serializedObject.FindProperty("m_ViewMode");
+        return viewModeProperty != null && viewModeProperty.intValue == 1;
+    }
+
+    private static object ConvertFolderIdentifier(Type targetType, int instanceId)
+    {
+        if (targetType == null)
+        {
+            return instanceId;
+        }
+
+        if (targetType == typeof(int))
+        {
+            return instanceId;
+        }
+
+        var implicitOperator = targetType.GetMethod(
+            "op_Implicit",
+            BindingFlags.Public | BindingFlags.Static,
+            null,
+            new[] { typeof(int) },
+            null);
+        if (implicitOperator != null)
+        {
+            return implicitOperator.Invoke(null, new object[] { instanceId });
+        }
+
+        return Convert.ChangeType(instanceId, targetType);
     }
 
     internal static void ApplySearch(EditorWindow projectBrowser, string searchText)

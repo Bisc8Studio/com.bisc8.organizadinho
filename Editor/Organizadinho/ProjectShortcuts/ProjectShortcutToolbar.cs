@@ -167,7 +167,7 @@ internal sealed class ProjectShortcutToolbar : VisualElement
     private Button CreateShortcutButton(FolderShortcutData shortcut)
     {
         var style = FolderDesignStyleResolver.Resolve(shortcut.Guid, shortcut.AssetPath);
-        var button = new Button(() => ProjectWindowNavigator.OpenFolder(shortcut.AssetPath))
+        var button = new Button(() => ProjectWindowNavigator.OpenFolder(_projectBrowser, shortcut.AssetPath))
         {
             tooltip = shortcut.AssetPath
         };

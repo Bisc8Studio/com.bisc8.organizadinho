@@ -6,7 +6,7 @@ namespace Organizadinho.Editor.ProjectShortcuts
 
 internal static class ProjectWindowNavigator
 {
-    internal static void OpenFolder(string assetPath)
+    internal static void OpenFolder(EditorWindow projectBrowser, string assetPath)
     {
         if (!AssetDatabase.IsValidFolder(assetPath))
         {
@@ -20,9 +20,7 @@ internal static class ProjectWindowNavigator
         }
 
         EditorUtility.FocusProjectWindow();
-        Selection.activeObject = folder;
-        EditorGUIUtility.PingObject(folder);
-        ProjectWindowIntegration.RevealFolder(folder);
+        ProjectWindowIntegration.OpenFolder(projectBrowser, folder);
     }
 }
 }
