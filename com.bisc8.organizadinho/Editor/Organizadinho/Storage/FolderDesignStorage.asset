@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: FolderDesignStorage
+  m_EditorClassIdentifier: Organizadinho.Editor:Organizadinho.Editor.Storage:FolderDesignStorage
+  entries:
+  - guid: 553b41c6037112149b985fabe98082d0
+    hasColor: 0
+    color: {r: 0.23, g: 0.43, b: 0.65, a: 1}
+    propagateChildren: 0
+    iconGuid: 8354a25c08f498a409cd2c506426ad3b

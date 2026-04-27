@@ -1,0 +1,35 @@
+﻿# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.sln
+*.csproj
+*.user
+*.pidb
+*.booproj
+*.svd
+
+# Rider / JetBrains
+/.idea/
+/*.DotSettings.user
+
+# Unity generated
+Library/
+Temp/
+Obj/
+Build/
+Builds/
+Logs/
+UserSettings/
+MemoryCaptures/
+Packages/packages-lock.json
+
+# Unity auto-generated files if testing inside a project
+/[Aa]ssets/AssetStoreTools*
+
+# Ignore nothing important from the package itself
+# Keep .meta files
+!.meta
