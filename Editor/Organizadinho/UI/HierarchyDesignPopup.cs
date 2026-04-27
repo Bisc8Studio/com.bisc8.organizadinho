@@ -102,7 +102,7 @@ public class HierarchyDesignPopup : PopupWindowContent
         {
             EditorGUI.BeginChangeCheck();
             bool newProp = EditorGUILayout.Toggle(
-                new GUIContent("  └ Cor nos filhos", "Aplica cor de fundo (fade) em todos os filhos"),
+                new GUIContent("  └ color in children", "Aplica cor de fundo (fade) em todos os filhos"),
                 _hd.propagateToChildren);
             if (EditorGUI.EndChangeCheck())
             {
