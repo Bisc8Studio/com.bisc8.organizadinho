@@ -31,7 +31,7 @@ public class FolderDesignPopup : PopupWindowContent
         float ln = EditorGUIUtility.singleLineHeight + 2f;
         float h = 8f;
         h += ln + 2f;
-        h += ln * 5f;
+        h += ln * 6f;
         h += 7f;
         h += ln;
         h += 90f;
@@ -54,10 +54,13 @@ public class FolderDesignPopup : PopupWindowContent
         var newHue = ColorHueSlider.DrawHueSlider(
             "Base Color",
             currentHue,
-            "Folder preview");
+            "Folder preview",
+            out var pastedColor);
 
         EditorGUI.BeginChangeCheck();
         bool newHasColor = EditorGUILayout.Toggle("Aplly Color", _entry.hasColor);
+        if (pastedColor)
+            newHasColor = true;
 
         EditorGUI.BeginDisabledGroup(!newHasColor);
         bool newPropagate = EditorGUILayout.Toggle(
@@ -65,7 +68,7 @@ public class FolderDesignPopup : PopupWindowContent
             _entry.propagateChildren);
         EditorGUI.EndDisabledGroup();
 
-        if (EditorGUI.EndChangeCheck() || !Mathf.Approximately(currentHue, newHue))
+        if (EditorGUI.EndChangeCheck() || pastedColor || !Mathf.Approximately(currentHue, newHue))
         {
             _entry.hasColor = newHasColor;
             _entry.propagateChildren = newPropagate;

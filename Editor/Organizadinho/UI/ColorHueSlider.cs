@@ -10,7 +10,13 @@ namespace Organizadinho.Editor.UI
 
         internal static float DrawHueSlider(string label, float currentHue, string previewLabel)
         {
+            return DrawHueSlider(label, currentHue, previewLabel, out _);
+        }
+
+        internal static float DrawHueSlider(string label, float currentHue, string previewLabel, out bool pasted)
+        {
             EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+            pasted = false;
 
             var hue = ColorPaletteUtility.NormalizeHue(currentHue);
             var sliderRect = GUILayoutUtility.GetRect(1f, 18f, GUILayout.ExpandWidth(true));
@@ -23,12 +29,36 @@ namespace Organizadinho.Editor.UI
             }
 
             hue = HandleSliderInput(sliderRect, hue);
+            hue = DrawClipboardControls(hue, out pasted);
             DrawHandle(sliderRect, hue);
 
             var previewRect = EditorGUILayout.GetControlRect(GUILayout.Height(18f));
             DrawPreview(previewRect, hue, previewLabel);
 
             return hue;
+        }
+
+        private static float DrawClipboardControls(float hue, out bool pasted)
+        {
+            pasted = false;
+
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Copy Color", GUILayout.Height(20f)))
+            {
+                OrganizadinhoColorClipboard.CopyHue(hue);
+            }
+
+            EditorGUI.BeginDisabledGroup(!OrganizadinhoColorClipboard.HasHue);
+            if (GUILayout.Button("Paste Color", GUILayout.Height(20f)) &&
+                OrganizadinhoColorClipboard.TryGetHue(out var copiedHue))
+            {
+                hue = copiedHue;
+                pasted = true;
+            }
+            EditorGUI.EndDisabledGroup();
+            EditorGUILayout.EndHorizontal();
+
+            return ColorPaletteUtility.NormalizeHue(hue);
         }
 
         private static float HandleSliderInput(Rect sliderRect, float currentHue)

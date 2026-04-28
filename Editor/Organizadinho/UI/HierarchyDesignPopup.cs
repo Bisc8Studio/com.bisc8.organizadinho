@@ -43,7 +43,7 @@ public class HierarchyDesignPopup : PopupWindowContent
 
         if (_hd != null && _hd.isOrganizer)
         {
-            h += ln * 5f;
+            h += ln * 6f;
             h += ln;
             h += 60f;
             h += ln;
