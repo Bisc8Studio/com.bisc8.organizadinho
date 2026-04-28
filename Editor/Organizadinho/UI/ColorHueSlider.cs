@@ -8,6 +8,7 @@ namespace Organizadinho.Editor.UI
     internal static class ColorHueSlider
     {
         private static Texture2D _gradientTexture;
+        private static int _activeSliderControl;
 
         internal static float DrawHueSlider(string label, float currentHue, string previewLabel)
         {
@@ -121,20 +122,84 @@ namespace Organizadinho.Editor.UI
         private static OrganizadinhoColorSelection HandleSliderInput(Rect sliderRect, OrganizadinhoColorSelection selection)
         {
             var currentEvent = Event.current;
-            if (currentEvent == null || currentEvent.button != 0)
+            if (currentEvent == null)
             {
                 return selection;
             }
 
-            if ((currentEvent.type == EventType.MouseDown || currentEvent.type == EventType.MouseDrag) &&
-                sliderRect.Contains(currentEvent.mousePosition))
+            int controlId = GUIUtility.GetControlID(FocusType.Passive, sliderRect);
+            bool isActive = GUIUtility.hotControl == controlId && _activeSliderControl == controlId;
+
+            switch (currentEvent.GetTypeForControl(controlId))
             {
-                currentEvent.Use();
-                return OrganizadinhoColorSelection.Base(
-                    Mathf.Clamp01((currentEvent.mousePosition.x - sliderRect.x) / sliderRect.width));
+                case EventType.MouseDown:
+                    if (currentEvent.button == 0 && sliderRect.Contains(currentEvent.mousePosition))
+                    {
+                        GUIUtility.hotControl = controlId;
+                        _activeSliderControl = controlId;
+                        currentEvent.Use();
+                        GUI.changed = true;
+                        RepaintActiveWindow();
+                        return SelectionFromMouse(sliderRect, currentEvent.mousePosition);
+                    }
+                    break;
+
+                case EventType.MouseDrag:
+                    if (currentEvent.button == 0 && isActive)
+                    {
+                        currentEvent.Use();
+                        GUI.changed = true;
+                        RepaintActiveWindow();
+                        return SelectionFromMouse(sliderRect, currentEvent.mousePosition);
+                    }
+                    break;
+
+                case EventType.MouseUp:
+                    if (isActive)
+                    {
+                        ReleaseSliderControl(controlId);
+                        currentEvent.Use();
+                        RepaintActiveWindow();
+                    }
+                    break;
+
+                case EventType.KeyDown:
+                    if (isActive && currentEvent.keyCode == KeyCode.Escape)
+                    {
+                        ReleaseSliderControl(controlId);
+                        currentEvent.Use();
+                    }
+                    break;
+
+                case EventType.Ignore:
+                    if (isActive)
+                        ReleaseSliderControl(controlId);
+                    break;
             }
 
             return selection;
+        }
+
+        private static OrganizadinhoColorSelection SelectionFromMouse(Rect sliderRect, Vector2 mousePosition)
+        {
+            return OrganizadinhoColorSelection.Base(
+                Mathf.Clamp01((mousePosition.x - sliderRect.x) / sliderRect.width));
+        }
+
+        private static void ReleaseSliderControl(int controlId)
+        {
+            if (GUIUtility.hotControl == controlId)
+                GUIUtility.hotControl = 0;
+
+            if (_activeSliderControl == controlId)
+                _activeSliderControl = 0;
+        }
+
+        private static void RepaintActiveWindow()
+        {
+            EditorWindow.focusedWindow?.Repaint();
+            if (!ReferenceEquals(EditorWindow.mouseOverWindow, EditorWindow.focusedWindow))
+                EditorWindow.mouseOverWindow?.Repaint();
         }
 
         private static void DrawHandle(Rect sliderRect, OrganizadinhoColorSelection selection)
