@@ -82,12 +82,13 @@ public static class HierarchyDesignDrawer
             var palette = ColorPaletteUtility.BuildPalette(hd.colorHue);
             float bgStartX = selectionRect.x - 28f;
             Rect bgRect = new Rect(bgStartX, selectionRect.y, Screen.width - bgStartX, selectionRect.height);
+            Texture2D backgroundTexture = GetOrCreateGradientTexture(palette.BaseColor, HierarchyDesign.FadeMode.LeftToRight);
 
             if (Event.current.type == EventType.Repaint)
             {
                 GUI.DrawTexture(
                     bgRect,
-                    GetOrCreateGradientTexture(palette.BaseColor, HierarchyDesign.FadeMode.LeftToRight),
+                    backgroundTexture,
                     ScaleMode.StretchToFill);
             }
 
@@ -128,7 +129,7 @@ public static class HierarchyDesignDrawer
                     GUI.color = Color.white;
                 }
 
-                DrawCustomLabel(selectionRect, go.name, hd);
+                DrawCustomLabel(selectionRect, bgRect, backgroundTexture, instanceID, go.name, hd);
             }
         }
 
@@ -171,8 +172,17 @@ public static class HierarchyDesignDrawer
         }
     }
 
-    private static void DrawCustomLabel(Rect selectionRect, string text, HierarchyDesign hd)
+    private static void DrawCustomLabel(
+        Rect selectionRect,
+        Rect backgroundRect,
+        Texture2D backgroundTexture,
+        int instanceID,
+        string text,
+        HierarchyDesign hd)
     {
+        if (EditorGUIUtility.editingTextField && IsActiveSelection(instanceID) && IsHierarchyFocused())
+            return;
+
         var palette = ColorPaletteUtility.BuildPalette(hd.colorHue);
         const float iconWidth = 16f;
         const float gap = 2f;
@@ -181,6 +191,10 @@ public static class HierarchyDesignDrawer
             selectionRect.y,
             selectionRect.width - iconWidth - gap - 20f,
             selectionRect.height);
+
+        if (hd.customFont != null)
+            ClearNativeLabel(labelRect, selectionRect, backgroundRect, backgroundTexture, instanceID);
+
         GUIStyle style = new GUIStyle(EditorStyles.label)
         {
             normal = { textColor = palette.ForegroundColor },
@@ -192,6 +206,83 @@ public static class HierarchyDesignDrawer
             style.font = hd.customFont;
 
         GUI.Label(labelRect, text, style);
+    }
+
+    private static void ClearNativeLabel(
+        Rect labelRect,
+        Rect selectionRect,
+        Rect backgroundRect,
+        Texture2D backgroundTexture,
+        int instanceID)
+    {
+        Rect clearRect = labelRect;
+        clearRect.xMin -= 1f;
+        clearRect.xMax += 2f;
+
+        EditorGUI.DrawRect(clearRect, GetHierarchyRowColor(selectionRect, instanceID));
+
+        GUI.BeginClip(clearRect);
+        GUI.DrawTexture(
+            new Rect(
+                backgroundRect.x - clearRect.x,
+                backgroundRect.y - clearRect.y,
+                backgroundRect.width,
+                backgroundRect.height),
+            backgroundTexture,
+            ScaleMode.StretchToFill);
+        GUI.EndClip();
+    }
+
+    private static Color GetHierarchyRowColor(Rect rect, int instanceID)
+    {
+        bool selected = IsSelected(instanceID);
+        bool focused = IsHierarchyFocused();
+
+        if (selected)
+        {
+            if (focused)
+                return EditorGUIUtility.isProSkin
+                    ? new Color(0.172f, 0.365f, 0.529f, 1f)
+                    : new Color(0.243f, 0.490f, 0.902f, 1f);
+
+            return EditorGUIUtility.isProSkin
+                ? new Color(0.300f, 0.300f, 0.300f, 1f)
+                : new Color(0.680f, 0.680f, 0.680f, 1f);
+        }
+
+        if (rect.Contains(Event.current.mousePosition))
+        {
+            return EditorGUIUtility.isProSkin
+                ? new Color(0.270f, 0.270f, 0.270f, 1f)
+                : new Color(0.800f, 0.800f, 0.800f, 1f);
+        }
+
+        return EditorGUIUtility.isProSkin
+            ? new Color(0.219f, 0.219f, 0.219f, 1f)
+            : new Color(0.760f, 0.760f, 0.760f, 1f);
+    }
+
+    private static bool IsSelected(int instanceID)
+    {
+        foreach (GameObject selectedObject in Selection.gameObjects)
+        {
+            if (selectedObject != null && selectedObject.GetInstanceID() == instanceID)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsActiveSelection(int instanceID)
+    {
+        GameObject activeObject = Selection.activeGameObject;
+        return activeObject != null && activeObject.GetInstanceID() == instanceID;
+    }
+
+    private static bool IsHierarchyFocused()
+    {
+        return EditorWindow.focusedWindow != null &&
+               EditorWindow.focusedWindow.GetType().Name == "SceneHierarchyWindow";
     }
 
     public static Texture2D GetOrCreateGradientTexture(Color color, HierarchyDesign.FadeMode mode)
