@@ -1,5 +1,8 @@
 using UnityEditor;
 using UnityEngine;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using Organizadinho.Editor.Storage;
 using Organizadinho.Editor.UI;
 using Organizadinho.Editor.Utilities;
@@ -10,10 +13,14 @@ namespace Organizadinho.Editor.FolderDesign
 [InitializeOnLoad]
 public static class FolderDesignDrawer
 {
+    private static readonly Dictionary<string, bool> EmptyFolderCache = new Dictionary<string, bool>(StringComparer.Ordinal);
+
     static FolderDesignDrawer()
     {
         EditorApplication.projectWindowItemOnGUI -= OnProjectGUI;
         EditorApplication.projectWindowItemOnGUI += OnProjectGUI;
+        EditorApplication.projectChanged -= ClearFolderStateCache;
+        EditorApplication.projectChanged += ClearFolderStateCache;
     }
 
     private static void OnProjectGUI(string guid, Rect selectionRect)
@@ -43,7 +50,7 @@ public static class FolderDesignDrawer
         var isIconView = selectionRect.height > 20f;
         var iconRect = GetFolderIconRect(selectionRect, isIconView);
 
-        DrawFolderIcon(path, iconRect, style, IsSelected(guid));
+        DrawFolderIcon(path, iconRect, style, IsSelected(guid), selectionRect.Contains(Event.current.mousePosition));
         DrawBadgeIcon(style, iconRect, isIconView);
     }
 
@@ -86,7 +93,12 @@ public static class FolderDesignDrawer
         storage.NotifyChanged(true);
     }
 
-    private static void DrawFolderIcon(string path, Rect iconRect, FolderDesignResolvedStyle style, bool isSelected)
+    private static void DrawFolderIcon(
+        string path,
+        Rect iconRect,
+        FolderDesignResolvedStyle style,
+        bool isSelected,
+        bool isHovered)
     {
         if (!style.HasResolvedColor)
             return;
@@ -99,6 +111,93 @@ public static class FolderDesignDrawer
         GUI.color = FolderDesignStyleResolver.GetProjectItemIconTint(style, isSelected);
         GUI.DrawTexture(iconRect, folderTexture, ScaleMode.ScaleAndCrop, true);
         GUI.color = previousColor;
+
+        if (IsEmptyFolder(path))
+            DrawEmptyFolderInterior(iconRect, isSelected, isHovered);
+    }
+
+    private static void DrawEmptyFolderInterior(Rect iconRect, bool isSelected, bool isHovered)
+    {
+        var innerRect = GetEmptyFolderInteriorRect(iconRect);
+        if (innerRect.width < 2f || innerRect.height < 2f)
+            return;
+
+        EditorGUI.DrawRect(innerRect, GetProjectWindowSurfaceColor(isSelected, isHovered));
+    }
+
+    private static Rect GetEmptyFolderInteriorRect(Rect iconRect)
+    {
+        return new Rect(
+            iconRect.x + iconRect.width * 0.18f,
+            iconRect.y + iconRect.height * 0.46f,
+            iconRect.width * 0.64f,
+            iconRect.height * 0.29f);
+    }
+
+    private static Color GetProjectWindowSurfaceColor(bool isSelected, bool isHovered)
+    {
+        if (isSelected)
+        {
+            return EditorGUIUtility.isProSkin
+                ? new Color(0.172f, 0.365f, 0.529f, 1f)
+                : new Color(0.243f, 0.490f, 0.902f, 1f);
+        }
+
+        if (isHovered)
+        {
+            return EditorGUIUtility.isProSkin
+                ? new Color(0.270f, 0.270f, 0.270f, 1f)
+                : new Color(0.800f, 0.800f, 0.800f, 1f);
+        }
+
+        return EditorGUIUtility.isProSkin
+            ? new Color(0.219f, 0.219f, 0.219f, 1f)
+            : new Color(0.760f, 0.760f, 0.760f, 1f);
+    }
+
+    private static bool IsEmptyFolder(string path)
+    {
+        path = NormalizeAssetPath(path);
+        if (string.IsNullOrEmpty(path))
+            return false;
+
+        if (EmptyFolderCache.TryGetValue(path, out var isEmpty))
+            return isEmpty;
+
+        isEmpty = !FolderHasDirectContent(path);
+        EmptyFolderCache[path] = isEmpty;
+        return isEmpty;
+    }
+
+    private static bool FolderHasDirectContent(string path)
+    {
+        if (AssetDatabase.GetSubFolders(path).Length > 0)
+            return true;
+
+        var guids = AssetDatabase.FindAssets(string.Empty, new[] { path });
+        for (var index = 0; index < guids.Length; index++)
+        {
+            var assetPath = NormalizeAssetPath(AssetDatabase.GUIDToAssetPath(guids[index]));
+            if (string.IsNullOrEmpty(assetPath) || assetPath == path)
+                continue;
+
+            if (NormalizeAssetPath(Path.GetDirectoryName(assetPath)) == path)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static string NormalizeAssetPath(string path)
+    {
+        return string.IsNullOrWhiteSpace(path)
+            ? string.Empty
+            : path.Replace('\\', '/').TrimEnd('/');
+    }
+
+    private static void ClearFolderStateCache()
+    {
+        EmptyFolderCache.Clear();
     }
 
     private static void DrawBadgeIcon(FolderDesignResolvedStyle style, Rect iconRect, bool isIconView)
