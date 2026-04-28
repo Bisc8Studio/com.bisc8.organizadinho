@@ -28,7 +28,6 @@ Current package version: `1.2.0`
 - Apply a base color, white, or black style.
 - Enable propagation to apply the folder color to child folders.
 - Empty folders preserve an empty-folder shape while still using the selected color.
-- Colored folder icons include a subtle vertical tint fade for better visual depth.
 - Badge icons can be selected from `Packages/com.bisc8.organizadinho/Editor Default Resources/Organizadinho/Icons`.
 
 ## Hierarchy Styling
