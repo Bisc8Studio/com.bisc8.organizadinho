@@ -192,8 +192,7 @@ public static class HierarchyDesignDrawer
             selectionRect.width - iconWidth - gap - 20f,
             selectionRect.height);
 
-        if (hd.customFont != null)
-            ClearNativeLabel(labelRect, selectionRect, backgroundRect, backgroundTexture, instanceID);
+        ClearNativeLabel(labelRect, selectionRect, backgroundRect, backgroundTexture, instanceID);
 
         GUIStyle style = new GUIStyle(EditorStyles.label)
         {
