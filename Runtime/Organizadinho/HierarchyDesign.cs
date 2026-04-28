@@ -18,6 +18,7 @@ public class HierarchyDesign : MonoBehaviour
     [Header("Organizer")]
     public bool isOrganizer = false;
     public bool propagateToChildren = false;
+    [HideInInspector] public OrganizadinhoColorMode colorMode = OrganizadinhoColorMode.Base;
     [HideInInspector] public float colorHue = DefaultHue;
     public Font customFont = null;
     [Range(8, 20)]
@@ -30,10 +31,14 @@ public class HierarchyDesign : MonoBehaviour
     {
         if (_dataVersion < CurrentVersion)
         {
+            colorMode = OrganizadinhoColorMode.Base;
             colorHue = DefaultHue;
             _dataVersion = CurrentVersion;
             return;
         }
+
+        if (!System.Enum.IsDefined(typeof(OrganizadinhoColorMode), colorMode))
+            colorMode = OrganizadinhoColorMode.Base;
 
         colorHue = Mathf.Repeat(colorHue, 1f);
     }

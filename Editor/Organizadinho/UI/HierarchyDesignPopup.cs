@@ -43,7 +43,7 @@ public class HierarchyDesignPopup : PopupWindowContent
 
         if (_hd != null && _hd.isOrganizer)
         {
-            h += ln * 6f;
+            h += ln * 7f;
             h += ln;
             h += 60f;
             h += ln;
@@ -102,15 +102,19 @@ public class HierarchyDesignPopup : PopupWindowContent
         if (_hd == null || !_hd.isOrganizer)
             return;
 
+        var currentMode = _hd != null ? _hd.colorMode : OrganizadinhoColorMode.Base;
         var currentHue = _hd != null ? _hd.colorHue : ColorPaletteUtility.DefaultHue;
-        var newHue = ColorHueSlider.DrawHueSlider(
+        var newColor = ColorHueSlider.DrawColorSlider(
             "Base Color",
+            currentMode,
             currentHue,
             "Organizer preview");
-        if (_hd != null && !Mathf.Approximately(currentHue, newHue))
+        if (_hd != null &&
+            (_hd.colorMode != newColor.Mode || !Mathf.Approximately(currentHue, newColor.Hue)))
         {
             Undo.RecordObject(_hd, "Edit Organizer Color");
-            _hd.colorHue = ColorPaletteUtility.NormalizeHue(newHue);
+            _hd.colorMode = newColor.Mode;
+            _hd.colorHue = newColor.Hue;
             EditorUtility.SetDirty(_hd);
             HierarchyDesignDrawer.ClearCache();
             EditorApplication.RepaintHierarchyWindow();
@@ -135,7 +139,7 @@ public class HierarchyDesignPopup : PopupWindowContent
         GUILayout.Space(4f);
 
         _hd.EnsureColorData();
-        var palette = ColorPaletteUtility.BuildPalette(_hd.colorHue);
+        var palette = ColorPaletteUtility.BuildPalette(_hd.colorMode, _hd.colorHue);
         Rect previewRect = EditorGUILayout.GetControlRect(GUILayout.Height(54f));
         GUI.DrawTexture(
             previewRect,
@@ -180,7 +184,7 @@ public class HierarchyDesignPopup : PopupWindowContent
 
     private void DrawFontPicker()
     {
-        var palette = ColorPaletteUtility.BuildPalette(_hd.colorHue);
+        var palette = ColorPaletteUtility.BuildPalette(_hd.colorMode, _hd.colorHue);
         EnsureFolderExists(OrganizadinhoResourcesRoot, "Fonts");
         var fonts = GetFolderFonts();
         EditorGUILayout.LabelField("Font  (" + FontFolder + "/)", EditorStyles.centeredGreyMiniLabel);
@@ -249,7 +253,7 @@ public class HierarchyDesignPopup : PopupWindowContent
 
     private void DrawIconPicker()
     {
-        var palette = ColorPaletteUtility.BuildPalette(_hd.colorHue);
+        var palette = ColorPaletteUtility.BuildPalette(_hd.colorMode, _hd.colorHue);
         EnsureIconFolderExists();
         var icons = GetFolderIcons();
         EditorGUILayout.LabelField("Custom Icon  (" + IconFolder + "/)", EditorStyles.centeredGreyMiniLabel);

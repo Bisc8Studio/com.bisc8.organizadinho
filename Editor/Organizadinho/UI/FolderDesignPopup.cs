@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using Organizadinho.Editor.Storage;
 using Organizadinho.Editor.Utilities;
+using Organizadinho.Runtime;
 
 namespace Organizadinho.Editor.UI
 {
@@ -31,7 +32,7 @@ public class FolderDesignPopup : PopupWindowContent
         float ln = EditorGUIUtility.singleLineHeight + 2f;
         float h = 8f;
         h += ln + 2f;
-        h += ln * 6f;
+        h += ln * 7f;
         h += 7f;
         h += ln;
         h += 90f;
@@ -50,9 +51,11 @@ public class FolderDesignPopup : PopupWindowContent
         EditorGUILayout.LabelField("Folder  " + folderName, EditorStyles.boldLabel);
         DrawHRule();
 
+        var currentMode = _entry.colorMode;
         var currentHue = _entry.hue;
-        var newHue = ColorHueSlider.DrawHueSlider(
+        var newColor = ColorHueSlider.DrawColorSlider(
             "Base Color",
+            currentMode,
             currentHue,
             "Folder preview",
             out var pastedColor);
@@ -68,11 +71,15 @@ public class FolderDesignPopup : PopupWindowContent
             _entry.propagateChildren);
         EditorGUI.EndDisabledGroup();
 
-        if (EditorGUI.EndChangeCheck() || pastedColor || !Mathf.Approximately(currentHue, newHue))
+        if (EditorGUI.EndChangeCheck() ||
+            pastedColor ||
+            currentMode != newColor.Mode ||
+            !Mathf.Approximately(currentHue, newColor.Hue))
         {
             _entry.hasColor = newHasColor;
             _entry.propagateChildren = newPropagate;
-            _entry.hue = ColorPaletteUtility.NormalizeHue(newHue);
+            _entry.colorMode = newColor.Mode;
+            _entry.hue = newColor.Hue;
             storage.NotifyChanged();
             editorWindow?.Repaint();
         }
@@ -101,7 +108,7 @@ public class FolderDesignPopup : PopupWindowContent
 
     private void DrawIconPicker(FolderDesignStorage storage)
     {
-        var palette = ColorPaletteUtility.BuildPalette(_entry.hue);
+        var palette = ColorPaletteUtility.BuildPalette(_entry.colorMode, _entry.hue);
         HierarchyDesignPopup.EnsureIconFolderExists();
         var icons = GetIcons();
 

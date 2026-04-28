@@ -4,6 +4,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 using Organizadinho.Editor.Utilities;
+using Organizadinho.Runtime;
 
 namespace Organizadinho.Editor.Storage
 {
@@ -13,6 +14,7 @@ namespace Organizadinho.Editor.Storage
         public string guid = "";
         public bool hasColor;
         public bool propagateChildren;
+        public OrganizadinhoColorMode colorMode = OrganizadinhoColorMode.Base;
         public float hue = ColorPaletteUtility.DefaultHue;
         public string iconGuid = "";
     }
@@ -21,7 +23,7 @@ namespace Organizadinho.Editor.Storage
     public class FolderDesignStorage : ScriptableSingleton<FolderDesignStorage>
     {
         private const string ProjectSettingsAssetPath = "ProjectSettings/Organizadinho/FolderDesignStorage.asset";
-        private const int CurrentVersion = 2;
+        private const int CurrentVersion = 3;
 
         [SerializeField] public List<FolderDesignEntry> entries = new List<FolderDesignEntry>();
         [SerializeField] private int _storageVersion;
@@ -54,6 +56,7 @@ namespace Organizadinho.Editor.Storage
             entry = new FolderDesignEntry
             {
                 guid = folderGuid,
+                colorMode = OrganizadinhoColorMode.Base,
                 hue = ColorPaletteUtility.DefaultHue
             };
             entries.Add(entry);
@@ -136,6 +139,7 @@ namespace Organizadinho.Editor.Storage
                         guid = legacyEntry.guid,
                         hasColor = legacyEntry.hasColor,
                         propagateChildren = legacyEntry.propagateChildren,
+                        colorMode = legacyEntry.colorMode,
                         hue = legacyEntry.hue,
                         iconGuid = legacyEntry.iconGuid
                     });
@@ -161,22 +165,18 @@ namespace Organizadinho.Editor.Storage
                 entries = new List<FolderDesignEntry>();
             }
 
-            for (var index = 0; index < entries.Count; index++)
-            {
-                var entry = entries[index];
-                if (entry == null)
-                {
-                    continue;
-                }
-
-                entry.hue = ColorPaletteUtility.DefaultHue;
-            }
+            NormalizeEntryColors();
 
             _storageVersion = CurrentVersion;
             SaveToProjectSettings();
         }
 
         private void NormalizeEntryHues()
+        {
+            NormalizeEntryColors();
+        }
+
+        private void NormalizeEntryColors()
         {
             for (var index = 0; index < entries.Count; index++)
             {
@@ -185,6 +185,9 @@ namespace Organizadinho.Editor.Storage
                 {
                     continue;
                 }
+
+                if (!Enum.IsDefined(typeof(OrganizadinhoColorMode), entry.colorMode))
+                    entry.colorMode = OrganizadinhoColorMode.Base;
 
                 entry.hue = ColorPaletteUtility.NormalizeHue(entry.hue);
             }

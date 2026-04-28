@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using Organizadinho.Runtime;
 
 namespace Organizadinho.Editor.Utilities
 {
@@ -51,22 +52,22 @@ namespace Organizadinho.Editor.Utilities
 
         internal static ColorPalette BuildPalette(float hue)
         {
+            return BuildPalette(OrganizadinhoColorMode.Base, hue);
+        }
+
+        internal static ColorPalette BuildPalette(OrganizadinhoColorMode mode, float hue)
+        {
             var normalizedHue = Mathf.Repeat(hue, 1f);
-            var baseColor = FromHue(normalizedHue, BaseSaturation, BaseValue);
+            var baseColor = GetBaseColor(mode, normalizedHue);
             var chrome = GetProjectChromeColor();
             var selection = GetUnitySelectionColor();
             var toolbar = Color.Lerp(baseColor, chrome, EditorGUIUtility.isProSkin ? 0.8f : 0.88f);
             var shortcut = Color.Lerp(baseColor, chrome, EditorGUIUtility.isProSkin ? 0.42f : 0.56f);
             var hover = Color.Lerp(baseColor, chrome, EditorGUIUtility.isProSkin ? 0.56f : 0.7f);
             var selected = Color.Lerp(baseColor, selection, 0.28f);
-            var border = Color.Lerp(
-                baseColor,
-                EditorGUIUtility.isProSkin ? Color.black : Color.white,
-                EditorGUIUtility.isProSkin ? 0.42f : 0.34f);
-            border.a = 0.85f;
+            var border = GetBorderColor(mode, baseColor);
 
-            var children = FromHue(normalizedHue, ChildrenSaturation, ChildrenValue);
-            children.a = 0.35f;
+            var children = GetChildrenColor(mode, normalizedHue);
 
             return new ColorPalette(
                 baseColor,
@@ -84,6 +85,74 @@ namespace Organizadinho.Editor.Utilities
         internal static Color FromHue(float hue)
         {
             return FromHue(hue, BaseSaturation, BaseValue);
+        }
+
+        internal static Color GetBaseColor(OrganizadinhoColorMode mode, float hue)
+        {
+            switch (mode)
+            {
+                case OrganizadinhoColorMode.White:
+                    return EditorGUIUtility.isProSkin
+                        ? new Color(0.92f, 0.92f, 0.9f, 1f)
+                        : new Color(0.98f, 0.98f, 0.96f, 1f);
+                case OrganizadinhoColorMode.Black:
+                    return EditorGUIUtility.isProSkin
+                        ? new Color(0.08f, 0.08f, 0.085f, 1f)
+                        : new Color(0.14f, 0.14f, 0.145f, 1f);
+                default:
+                    return FromHue(hue, BaseSaturation, BaseValue);
+            }
+        }
+
+        private static Color GetChildrenColor(OrganizadinhoColorMode mode, float hue)
+        {
+            Color children;
+            switch (mode)
+            {
+                case OrganizadinhoColorMode.White:
+                    children = EditorGUIUtility.isProSkin
+                        ? new Color(0.9f, 0.9f, 0.88f, 1f)
+                        : new Color(1f, 1f, 1f, 1f);
+                    break;
+                case OrganizadinhoColorMode.Black:
+                    children = EditorGUIUtility.isProSkin
+                        ? new Color(0.16f, 0.16f, 0.17f, 1f)
+                        : new Color(0.08f, 0.08f, 0.085f, 1f);
+                    break;
+                default:
+                    children = FromHue(hue, ChildrenSaturation, ChildrenValue);
+                    break;
+            }
+
+            children.a = mode == OrganizadinhoColorMode.Black ? 0.28f : 0.35f;
+            return children;
+        }
+
+        private static Color GetBorderColor(OrganizadinhoColorMode mode, Color baseColor)
+        {
+            Color border;
+            switch (mode)
+            {
+                case OrganizadinhoColorMode.White:
+                    border = EditorGUIUtility.isProSkin
+                        ? new Color(0.72f, 0.72f, 0.7f, 1f)
+                        : new Color(0.58f, 0.58f, 0.56f, 1f);
+                    break;
+                case OrganizadinhoColorMode.Black:
+                    border = EditorGUIUtility.isProSkin
+                        ? new Color(0.42f, 0.42f, 0.44f, 1f)
+                        : new Color(0.02f, 0.02f, 0.025f, 1f);
+                    break;
+                default:
+                    border = Color.Lerp(
+                        baseColor,
+                        EditorGUIUtility.isProSkin ? Color.black : Color.white,
+                        EditorGUIUtility.isProSkin ? 0.42f : 0.34f);
+                    break;
+            }
+
+            border.a = 0.85f;
+            return border;
         }
 
         internal static float NormalizeHue(float hue)

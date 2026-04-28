@@ -92,7 +92,9 @@ namespace Organizadinho.Editor.Utilities
             var resolvedStyle = new FolderDesignResolvedStyle(
                 hasDirectConfiguration,
                 colorEntry != null && colorEntry.hasColor,
-                colorEntry != null && colorEntry.hasColor ? ColorPaletteUtility.FromHue(colorEntry.hue) : default,
+                colorEntry != null && colorEntry.hasColor
+                    ? ColorPaletteUtility.GetBaseColor(colorEntry.colorMode, colorEntry.hue)
+                    : default,
                 colorSource,
                 directEntry?.iconGuid);
 

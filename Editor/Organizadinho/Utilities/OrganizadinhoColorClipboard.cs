@@ -2,21 +2,21 @@ namespace Organizadinho.Editor.Utilities
 {
     internal static class OrganizadinhoColorClipboard
     {
-        private static bool _hasHue;
-        private static float _hue;
+        private static bool _hasColor;
+        private static OrganizadinhoColorSelection _color;
 
-        internal static bool HasHue => _hasHue;
+        internal static bool HasColor => _hasColor;
 
-        internal static void CopyHue(float hue)
+        internal static void CopyColor(OrganizadinhoColorSelection color)
         {
-            _hue = ColorPaletteUtility.NormalizeHue(hue);
-            _hasHue = true;
+            _color = color;
+            _hasColor = true;
         }
 
-        internal static bool TryGetHue(out float hue)
+        internal static bool TryGetColor(out OrganizadinhoColorSelection color)
         {
-            hue = _hasHue ? _hue : ColorPaletteUtility.DefaultHue;
-            return _hasHue;
+            color = _hasColor ? _color : OrganizadinhoColorSelection.Base(ColorPaletteUtility.DefaultHue);
+            return _hasColor;
         }
     }
 }
