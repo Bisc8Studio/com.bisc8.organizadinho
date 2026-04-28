@@ -10,6 +10,10 @@ namespace Organizadinho.Editor.FolderDesign
 [InitializeOnLoad]
 public static class FolderDesignDrawer
 {
+    private const float FolderTintHorizontalPadding = 0.75f;
+    private const float FolderTintTopPadding = 0.5f;
+    private const float FolderTintBottomPadding = 1f;
+
     static FolderDesignDrawer()
     {
         EditorApplication.projectWindowItemOnGUI -= OnProjectGUI;
@@ -99,13 +103,49 @@ public static class FolderDesignDrawer
         if (renderData.FolderTexture == null)
             return;
 
+        var tintRect = GetFolderTintRect(iconRect);
         var previousColor = GUI.color;
         GUI.color = FolderDesignStyleResolver.GetProjectItemIconTint(style, isSelected);
-        GUI.DrawTexture(iconRect, renderData.FolderTexture, ScaleMode.ScaleAndCrop, true);
+        GUI.DrawTexture(tintRect, renderData.FolderTexture, ScaleMode.ScaleAndCrop, true);
+        DrawFolderTintGradient(tintRect, renderData.FolderTexture);
         GUI.color = previousColor;
 
         if (renderData.IsEmptyFolder)
-            DrawEmptyFolderInterior(iconRect, isSelected, isHovered);
+            DrawEmptyFolderInterior(tintRect, isSelected, isHovered);
+    }
+
+    private static Rect GetFolderTintRect(Rect iconRect)
+    {
+        var tintRect = iconRect;
+        tintRect.xMin -= FolderTintHorizontalPadding;
+        tintRect.xMax += FolderTintHorizontalPadding;
+        tintRect.yMin -= FolderTintTopPadding;
+        tintRect.yMax += FolderTintBottomPadding;
+        return tintRect;
+    }
+
+    private static void DrawFolderTintGradient(Rect tintRect, Texture folderTexture)
+    {
+        DrawFolderTextureOverlay(
+            tintRect,
+            folderTexture,
+            new Color(1f, 1f, 1f, EditorGUIUtility.isProSkin ? 0.035f : 0.025f));
+
+        DrawFolderTextureOverlay(
+            new Rect(tintRect.x, tintRect.y + tintRect.height * 0.58f, tintRect.width, tintRect.height * 0.42f),
+            folderTexture,
+            new Color(0f, 0f, 0f, EditorGUIUtility.isProSkin ? 0.028f : 0.02f));
+    }
+
+    private static void DrawFolderTextureOverlay(Rect drawRect, Texture texture, Color color)
+    {
+        if (drawRect.width <= 0f || drawRect.height <= 0f || color.a <= 0f)
+            return;
+
+        var previousColor = GUI.color;
+        GUI.color = color;
+        GUI.DrawTexture(drawRect, texture, ScaleMode.ScaleAndCrop, true);
+        GUI.color = previousColor;
     }
 
     private static void DrawEmptyFolderInterior(Rect iconRect, bool isSelected, bool isHovered)
