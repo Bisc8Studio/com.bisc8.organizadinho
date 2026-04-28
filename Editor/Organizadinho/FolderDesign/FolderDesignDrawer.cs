@@ -1,8 +1,5 @@
 using UnityEditor;
 using UnityEngine;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using Organizadinho.Editor.Storage;
 using Organizadinho.Editor.UI;
 using Organizadinho.Editor.Utilities;
@@ -13,14 +10,10 @@ namespace Organizadinho.Editor.FolderDesign
 [InitializeOnLoad]
 public static class FolderDesignDrawer
 {
-    private static readonly Dictionary<string, bool> EmptyFolderCache = new Dictionary<string, bool>(StringComparer.Ordinal);
-
     static FolderDesignDrawer()
     {
         EditorApplication.projectWindowItemOnGUI -= OnProjectGUI;
         EditorApplication.projectWindowItemOnGUI += OnProjectGUI;
-        EditorApplication.projectChanged -= ClearFolderStateCache;
-        EditorApplication.projectChanged += ClearFolderStateCache;
     }
 
     private static void OnProjectGUI(string guid, Rect selectionRect)
@@ -43,15 +36,15 @@ public static class FolderDesignDrawer
         if (Event.current.type != EventType.Repaint)
             return;
 
-        var style = FolderDesignStyleResolver.Resolve(guid, path);
-        if (!style.HasVisualOverride)
+        var renderData = FolderDesignRenderCache.Get(guid, path);
+        if (!renderData.Style.HasVisualOverride)
             return;
 
         var isIconView = selectionRect.height > 20f;
         var iconRect = GetFolderIconRect(selectionRect, isIconView);
 
-        DrawFolderIcon(path, iconRect, style, IsSelected(guid), selectionRect.Contains(Event.current.mousePosition));
-        DrawBadgeIcon(style, iconRect, isIconView);
+        DrawFolderIcon(renderData, iconRect, IsSelected(guid), selectionRect.Contains(Event.current.mousePosition));
+        DrawBadgeIcon(renderData.Style, iconRect, isIconView);
     }
 
     [MenuItem("Assets/Hierarchy Design/Customize Folder...", true)]
@@ -94,25 +87,24 @@ public static class FolderDesignDrawer
     }
 
     private static void DrawFolderIcon(
-        string path,
+        FolderDesignRenderData renderData,
         Rect iconRect,
-        FolderDesignResolvedStyle style,
         bool isSelected,
         bool isHovered)
     {
+        var style = renderData.Style;
         if (!style.HasResolvedColor)
             return;
 
-        var folderTexture = AssetDatabase.GetCachedIcon(path) ?? EditorGUIUtility.FindTexture("Folder Icon");
-        if (folderTexture == null)
+        if (renderData.FolderTexture == null)
             return;
 
         var previousColor = GUI.color;
         GUI.color = FolderDesignStyleResolver.GetProjectItemIconTint(style, isSelected);
-        GUI.DrawTexture(iconRect, folderTexture, ScaleMode.ScaleAndCrop, true);
+        GUI.DrawTexture(iconRect, renderData.FolderTexture, ScaleMode.ScaleAndCrop, true);
         GUI.color = previousColor;
 
-        if (IsEmptyFolder(path))
+        if (renderData.IsEmptyFolder)
             DrawEmptyFolderInterior(iconRect, isSelected, isHovered);
     }
 
@@ -153,51 +145,6 @@ public static class FolderDesignDrawer
         return EditorGUIUtility.isProSkin
             ? new Color(0.219f, 0.219f, 0.219f, 1f)
             : new Color(0.760f, 0.760f, 0.760f, 1f);
-    }
-
-    private static bool IsEmptyFolder(string path)
-    {
-        path = NormalizeAssetPath(path);
-        if (string.IsNullOrEmpty(path))
-            return false;
-
-        if (EmptyFolderCache.TryGetValue(path, out var isEmpty))
-            return isEmpty;
-
-        isEmpty = !FolderHasDirectContent(path);
-        EmptyFolderCache[path] = isEmpty;
-        return isEmpty;
-    }
-
-    private static bool FolderHasDirectContent(string path)
-    {
-        if (AssetDatabase.GetSubFolders(path).Length > 0)
-            return true;
-
-        var guids = AssetDatabase.FindAssets(string.Empty, new[] { path });
-        for (var index = 0; index < guids.Length; index++)
-        {
-            var assetPath = NormalizeAssetPath(AssetDatabase.GUIDToAssetPath(guids[index]));
-            if (string.IsNullOrEmpty(assetPath) || assetPath == path)
-                continue;
-
-            if (NormalizeAssetPath(Path.GetDirectoryName(assetPath)) == path)
-                return true;
-        }
-
-        return false;
-    }
-
-    private static string NormalizeAssetPath(string path)
-    {
-        return string.IsNullOrWhiteSpace(path)
-            ? string.Empty
-            : path.Replace('\\', '/').TrimEnd('/');
-    }
-
-    private static void ClearFolderStateCache()
-    {
-        EmptyFolderCache.Clear();
     }
 
     private static void DrawBadgeIcon(FolderDesignResolvedStyle style, Rect iconRect, bool isIconView)

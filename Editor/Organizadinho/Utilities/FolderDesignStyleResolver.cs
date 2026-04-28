@@ -47,6 +47,7 @@ namespace Organizadinho.Editor.Utilities
 
         private static readonly Dictionary<string, Texture2D> IconCache =
             new Dictionary<string, Texture2D>(StringComparer.Ordinal);
+        private static bool _lastProSkin = EditorGUIUtility.isProSkin;
 
         static FolderDesignStyleResolver()
         {
@@ -56,6 +57,8 @@ namespace Organizadinho.Editor.Utilities
 
         internal static FolderDesignResolvedStyle Resolve(string folderGuid, string assetPath = null)
         {
+            InvalidateIfSkinChanged();
+
             if (string.IsNullOrEmpty(folderGuid) && string.IsNullOrEmpty(assetPath))
                 return default;
 
@@ -205,8 +208,17 @@ namespace Organizadinho.Editor.Utilities
 
         internal static void Invalidate()
         {
+            _lastProSkin = EditorGUIUtility.isProSkin;
             StyleCache.Clear();
             IconCache.Clear();
+        }
+
+        private static void InvalidateIfSkinChanged()
+        {
+            if (_lastProSkin == EditorGUIUtility.isProSkin)
+                return;
+
+            Invalidate();
         }
 
         private static FolderDesignEntry FindPropagatingAncestor(string folderPath, FolderDesignStorage storage)
