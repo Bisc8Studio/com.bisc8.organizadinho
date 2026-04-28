@@ -2,6 +2,10 @@
 
 Organizadinho is a Unity editor asset focused on improving Project and Hierarchy navigation, folder styling, and visual organization.
 
+## Version
+
+Current package version: `1.2.0`
+
 ## Installation
 
 1. Open `Window > Package Manager`.
@@ -12,8 +16,33 @@ Organizadinho is a Unity editor asset focused on improving Project and Hierarchy
 ## Main Features
 
 - Hierarchy organizer rows with custom colors, fonts, icons, and child propagation.
-- Project window folder styling with color inheritance and badge icons.
+- Project window folder styling with color inheritance, badge icons, and empty-folder-aware rendering.
 - Project shortcuts toolbar with drag-and-drop folder shortcuts and integrated search.
+- Shared color controls for Hierarchy and FolderDesign, including copy/paste between systems.
+- Base, white, and black color modes for folder and hierarchy styling.
+- Improved color slider drag behavior that keeps updating while the mouse is held down, even outside the slider bounds.
+
+## Folder Styling
+
+- Use `Alt + Click` on a folder in the Project window to open the FolderDesign popup.
+- Apply a base color, white, or black style.
+- Enable propagation to apply the folder color to child folders.
+- Empty folders preserve an empty-folder shape while still using the selected color.
+- Colored folder icons include a subtle vertical tint fade for better visual depth.
+- Badge icons can be selected from `Packages/com.bisc8.organizadinho/Editor Default Resources/Organizadinho/Icons`.
+
+## Hierarchy Styling
+
+- Use `Alt + Click` on a GameObject in the Hierarchy, or use the row dot, to open the Hierarchy organizer popup.
+- Mark a GameObject as an organizer to draw a custom row in the Hierarchy.
+- Customize color, font, font size, and icon.
+- Enable child color propagation to visually group descendants.
+
+## Color Copy/Paste
+
+- Use `Copy Color` in either the Hierarchy or FolderDesign color UI.
+- Use `Paste Color` in the other system to apply the same color mode and base slider value.
+- Copy/paste works for base colors, white, and black.
 
 ## Version Control Behavior
 
