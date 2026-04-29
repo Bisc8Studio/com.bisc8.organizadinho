@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 using Organizadinho.Editor.Utilities;
 using Organizadinho.Runtime;
@@ -37,6 +38,7 @@ namespace Organizadinho.Editor.Storage
             if (instance.entries == null)
                 instance.entries = new List<FolderDesignEntry>();
 
+            instance.RestoreProjectSettingsEntriesIfNeeded();
             instance.MigrateLegacyEntriesIfNeeded();
             instance.EnsureEntryVersion();
             return instance;
@@ -95,6 +97,29 @@ namespace Organizadinho.Editor.Storage
             }
         }
 
+        private void RestoreProjectSettingsEntriesIfNeeded()
+        {
+            if (entries.Count > 0 || !File.Exists(ProjectSettingsAssetPath))
+            {
+                return;
+            }
+
+            var loadedObjects = InternalEditorUtility.LoadSerializedFileAndForget(ProjectSettingsAssetPath);
+            for (var index = 0; index < loadedObjects.Length; index++)
+            {
+                var loadedStorage = loadedObjects[index] as FolderDesignStorage;
+                if (loadedStorage == null || loadedStorage == this ||
+                    loadedStorage.entries == null || loadedStorage.entries.Count == 0)
+                {
+                    continue;
+                }
+
+                entries = CloneEntries(loadedStorage.entries);
+                _storageVersion = loadedStorage._storageVersion;
+                break;
+            }
+        }
+
         private void MigrateLegacyEntriesIfNeeded()
         {
             if (_migrationChecked)
@@ -125,25 +150,7 @@ namespace Organizadinho.Editor.Storage
                     continue;
                 }
 
-                entries = new List<FolderDesignEntry>(legacyStorage.entries.Count);
-                for (var entryIndex = 0; entryIndex < legacyStorage.entries.Count; entryIndex++)
-                {
-                    var legacyEntry = legacyStorage.entries[entryIndex];
-                    if (legacyEntry == null)
-                    {
-                        continue;
-                    }
-
-                    entries.Add(new FolderDesignEntry
-                    {
-                        guid = legacyEntry.guid,
-                        hasColor = legacyEntry.hasColor,
-                        propagateChildren = legacyEntry.propagateChildren,
-                        colorMode = legacyEntry.colorMode,
-                        hue = legacyEntry.hue,
-                        iconGuid = legacyEntry.iconGuid
-                    });
-                }
+                entries = CloneEntries(legacyStorage.entries);
 
                 SaveToProjectSettings();
                 Changed?.Invoke();
@@ -191,6 +198,31 @@ namespace Organizadinho.Editor.Storage
 
                 entry.hue = ColorPaletteUtility.NormalizeHue(entry.hue);
             }
+        }
+
+        private static List<FolderDesignEntry> CloneEntries(List<FolderDesignEntry> source)
+        {
+            var clonedEntries = new List<FolderDesignEntry>(source.Count);
+            for (var index = 0; index < source.Count; index++)
+            {
+                var sourceEntry = source[index];
+                if (sourceEntry == null)
+                {
+                    continue;
+                }
+
+                clonedEntries.Add(new FolderDesignEntry
+                {
+                    guid = sourceEntry.guid,
+                    hasColor = sourceEntry.hasColor,
+                    propagateChildren = sourceEntry.propagateChildren,
+                    colorMode = sourceEntry.colorMode,
+                    hue = sourceEntry.hue,
+                    iconGuid = sourceEntry.iconGuid
+                });
+            }
+
+            return clonedEntries;
         }
     }
 }
