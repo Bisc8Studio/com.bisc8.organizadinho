@@ -32,7 +32,7 @@ public class FolderDesignPopup : PopupWindowContent
         float ln = EditorGUIUtility.singleLineHeight + 2f;
         float h = 8f;
         h += ln + 2f;
-        h += ln * 7f;
+        h += ln * 9f;
         h += 7f;
         h += ln;
         h += 90f;
@@ -54,7 +54,7 @@ public class FolderDesignPopup : PopupWindowContent
         var currentMode = _entry.colorMode;
         var currentHue = _entry.hue;
         var newColor = ColorHueSlider.DrawColorSlider(
-            "Base Color",
+            "Color",
             currentMode,
             currentHue,
             "Folder preview",

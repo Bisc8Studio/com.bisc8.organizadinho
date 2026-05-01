@@ -13,9 +13,14 @@ namespace Organizadinho.Editor.Utilities
         internal OrganizadinhoColorMode Mode { get; }
         internal float Hue { get; }
 
-        internal static OrganizadinhoColorSelection Base(float hue)
+        internal static OrganizadinhoColorSelection Pastel(float hue)
         {
-            return new OrganizadinhoColorSelection(OrganizadinhoColorMode.Base, hue);
+            return new OrganizadinhoColorSelection(OrganizadinhoColorMode.Pastel, hue);
+        }
+
+        internal static OrganizadinhoColorSelection Vibrant(float hue)
+        {
+            return new OrganizadinhoColorSelection(OrganizadinhoColorMode.Vibrant, hue);
         }
     }
 }

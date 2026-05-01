@@ -15,7 +15,7 @@ namespace Organizadinho.Editor.Utilities
 
         internal static bool TryGetColor(out OrganizadinhoColorSelection color)
         {
-            color = _hasColor ? _color : OrganizadinhoColorSelection.Base(ColorPaletteUtility.DefaultHue);
+            color = _hasColor ? _color : OrganizadinhoColorSelection.Pastel(ColorPaletteUtility.DefaultHue);
             return _hasColor;
         }
     }

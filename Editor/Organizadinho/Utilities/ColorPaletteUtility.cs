@@ -45,14 +45,18 @@ namespace Organizadinho.Editor.Utilities
     internal static class ColorPaletteUtility
     {
         internal const float DefaultHue = 0.58f;
-        private const float BaseSaturation = 0.34f;
-        private const float BaseValue = 0.96f;
-        private const float ChildrenSaturation = 0.24f;
-        private const float ChildrenValue = 0.99f;
+        private const float PastelSaturation = 0.34f;
+        private const float PastelValue = 0.96f;
+        private const float VibrantSaturation = 0.82f;
+        private const float VibrantValue = 0.94f;
+        private const float PastelChildrenSaturation = 0.24f;
+        private const float PastelChildrenValue = 0.99f;
+        private const float VibrantChildrenSaturation = 0.46f;
+        private const float VibrantChildrenValue = 0.96f;
 
         internal static ColorPalette BuildPalette(float hue)
         {
-            return BuildPalette(OrganizadinhoColorMode.Base, hue);
+            return BuildPalette(OrganizadinhoColorMode.Pastel, hue);
         }
 
         internal static ColorPalette BuildPalette(OrganizadinhoColorMode mode, float hue)
@@ -61,10 +65,17 @@ namespace Organizadinho.Editor.Utilities
             var baseColor = GetBaseColor(mode, normalizedHue);
             var chrome = GetProjectChromeColor();
             var selection = GetUnitySelectionColor();
-            var toolbar = Color.Lerp(baseColor, chrome, EditorGUIUtility.isProSkin ? 0.8f : 0.88f);
-            var shortcut = Color.Lerp(baseColor, chrome, EditorGUIUtility.isProSkin ? 0.42f : 0.56f);
-            var hover = Color.Lerp(baseColor, chrome, EditorGUIUtility.isProSkin ? 0.56f : 0.7f);
-            var selected = Color.Lerp(baseColor, selection, 0.28f);
+            var isVibrant = mode == OrganizadinhoColorMode.Vibrant;
+            var toolbar = Color.Lerp(baseColor, chrome, EditorGUIUtility.isProSkin
+                ? (isVibrant ? 0.86f : 0.8f)
+                : (isVibrant ? 0.9f : 0.88f));
+            var shortcut = Color.Lerp(baseColor, chrome, EditorGUIUtility.isProSkin
+                ? (isVibrant ? 0.58f : 0.42f)
+                : (isVibrant ? 0.68f : 0.56f));
+            var hover = Color.Lerp(baseColor, chrome, EditorGUIUtility.isProSkin
+                ? (isVibrant ? 0.68f : 0.56f)
+                : (isVibrant ? 0.76f : 0.7f));
+            var selected = Color.Lerp(baseColor, selection, isVibrant ? 0.34f : 0.28f);
             var border = GetBorderColor(mode, baseColor);
 
             var children = GetChildrenColor(mode, normalizedHue);
@@ -84,7 +95,12 @@ namespace Organizadinho.Editor.Utilities
 
         internal static Color FromHue(float hue)
         {
-            return FromHue(hue, BaseSaturation, BaseValue);
+            return GetBaseColor(OrganizadinhoColorMode.Pastel, hue);
+        }
+
+        internal static Color FromHue(OrganizadinhoColorMode mode, float hue)
+        {
+            return GetBaseColor(mode, hue);
         }
 
         internal static Color GetBaseColor(OrganizadinhoColorMode mode, float hue)
@@ -99,8 +115,10 @@ namespace Organizadinho.Editor.Utilities
                     return EditorGUIUtility.isProSkin
                         ? new Color(0.08f, 0.08f, 0.085f, 1f)
                         : new Color(0.14f, 0.14f, 0.145f, 1f);
+                case OrganizadinhoColorMode.Vibrant:
+                    return FromHue(hue, VibrantSaturation, VibrantValue);
                 default:
-                    return FromHue(hue, BaseSaturation, BaseValue);
+                    return FromHue(hue, PastelSaturation, PastelValue);
             }
         }
 
@@ -119,12 +137,17 @@ namespace Organizadinho.Editor.Utilities
                         ? new Color(0.16f, 0.16f, 0.17f, 1f)
                         : new Color(0.08f, 0.08f, 0.085f, 1f);
                     break;
+                case OrganizadinhoColorMode.Vibrant:
+                    children = FromHue(hue, VibrantChildrenSaturation, VibrantChildrenValue);
+                    break;
                 default:
-                    children = FromHue(hue, ChildrenSaturation, ChildrenValue);
+                    children = FromHue(hue, PastelChildrenSaturation, PastelChildrenValue);
                     break;
             }
 
-            children.a = mode == OrganizadinhoColorMode.Black ? 0.28f : 0.35f;
+            children.a = mode == OrganizadinhoColorMode.Black
+                ? 0.28f
+                : (mode == OrganizadinhoColorMode.Vibrant ? 0.24f : 0.35f);
             return children;
         }
 
