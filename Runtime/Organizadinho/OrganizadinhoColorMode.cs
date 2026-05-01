@@ -2,8 +2,9 @@ namespace Organizadinho.Runtime
 {
     public enum OrganizadinhoColorMode
     {
-        Base,
-        White,
-        Black
+        Pastel = 0,
+        White = 1,
+        Black = 2,
+        Vibrant = 3
     }
 }

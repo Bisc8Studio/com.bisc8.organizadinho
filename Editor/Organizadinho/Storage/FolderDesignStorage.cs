@@ -15,7 +15,7 @@ namespace Organizadinho.Editor.Storage
         public string guid = "";
         public bool hasColor;
         public bool propagateChildren;
-        public OrganizadinhoColorMode colorMode = OrganizadinhoColorMode.Base;
+        public OrganizadinhoColorMode colorMode = OrganizadinhoColorMode.Pastel;
         public float hue = ColorPaletteUtility.DefaultHue;
         public string iconGuid = "";
     }
@@ -58,7 +58,7 @@ namespace Organizadinho.Editor.Storage
             entry = new FolderDesignEntry
             {
                 guid = folderGuid,
-                colorMode = OrganizadinhoColorMode.Base,
+                colorMode = OrganizadinhoColorMode.Pastel,
                 hue = ColorPaletteUtility.DefaultHue
             };
             entries.Add(entry);
@@ -194,7 +194,7 @@ namespace Organizadinho.Editor.Storage
                 }
 
                 if (!Enum.IsDefined(typeof(OrganizadinhoColorMode), entry.colorMode))
-                    entry.colorMode = OrganizadinhoColorMode.Base;
+                    entry.colorMode = OrganizadinhoColorMode.Pastel;
 
                 entry.hue = ColorPaletteUtility.NormalizeHue(entry.hue);
             }

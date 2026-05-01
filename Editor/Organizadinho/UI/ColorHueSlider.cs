@@ -7,17 +7,18 @@ namespace Organizadinho.Editor.UI
 {
     internal static class ColorHueSlider
     {
-        private static Texture2D _gradientTexture;
+        private static Texture2D _pastelGradientTexture;
+        private static Texture2D _vibrantGradientTexture;
         private static int _activeSliderControl;
 
         internal static float DrawHueSlider(string label, float currentHue, string previewLabel)
         {
-            return DrawColorSlider(label, OrganizadinhoColorMode.Base, currentHue, previewLabel, out _).Hue;
+            return DrawColorSlider(label, OrganizadinhoColorMode.Pastel, currentHue, previewLabel, out _).Hue;
         }
 
         internal static float DrawHueSlider(string label, float currentHue, string previewLabel, out bool pasted)
         {
-            return DrawColorSlider(label, OrganizadinhoColorMode.Base, currentHue, previewLabel, out pasted).Hue;
+            return DrawColorSlider(label, OrganizadinhoColorMode.Pastel, currentHue, previewLabel, out pasted).Hue;
         }
 
         internal static OrganizadinhoColorSelection DrawColorSlider(
@@ -40,19 +41,10 @@ namespace Organizadinho.Editor.UI
             pasted = false;
 
             var selection = new OrganizadinhoColorSelection(currentMode, currentHue);
-            var sliderRect = GUILayoutUtility.GetRect(1f, 18f, GUILayout.ExpandWidth(true));
-
-            if (Event.current.type == EventType.Repaint)
-            {
-                GUI.DrawTexture(sliderRect, GetGradientTexture(), ScaleMode.StretchToFill);
-                EditorGUI.DrawRect(new Rect(sliderRect.x, sliderRect.y, sliderRect.width, 1f), new Color(0f, 0f, 0f, 0.3f));
-                EditorGUI.DrawRect(new Rect(sliderRect.x, sliderRect.yMax - 1f, sliderRect.width, 1f), new Color(0f, 0f, 0f, 0.4f));
-            }
-
-            selection = HandleSliderInput(sliderRect, selection);
+            selection = DrawSliderRow("Pastel", OrganizadinhoColorMode.Pastel, selection);
+            selection = DrawSliderRow("Vibrant", OrganizadinhoColorMode.Vibrant, selection);
             selection = DrawSpecialColorControls(selection);
             selection = DrawClipboardControls(selection, out pasted);
-            DrawHandle(sliderRect, selection);
 
             var previewRect = EditorGUILayout.GetControlRect(GUILayout.Height(18f));
             DrawPreview(previewRect, selection, previewLabel);
@@ -60,10 +52,33 @@ namespace Organizadinho.Editor.UI
             return selection;
         }
 
+        private static OrganizadinhoColorSelection DrawSliderRow(
+            string label,
+            OrganizadinhoColorMode mode,
+            OrganizadinhoColorSelection selection)
+        {
+            var isActive = selection.Mode == mode;
+            var rowRect = GUILayoutUtility.GetRect(1f, 22f, GUILayout.ExpandWidth(true));
+            var labelRect = new Rect(rowRect.x, rowRect.y + 2f, 52f, 18f);
+            var sliderRect = new Rect(labelRect.xMax + 4f, rowRect.y + 2f, rowRect.width - labelRect.width - 4f, 18f);
+
+            if (Event.current.type == EventType.Repaint)
+            {
+                var labelStyle = isActive ? EditorStyles.boldLabel : EditorStyles.miniLabel;
+                EditorGUI.LabelField(labelRect, label, labelStyle);
+                GUI.DrawTexture(sliderRect, GetGradientTexture(mode), ScaleMode.StretchToFill);
+                EditorGUI.DrawRect(new Rect(sliderRect.x, sliderRect.y, sliderRect.width, 1f), new Color(0f, 0f, 0f, isActive ? 0.55f : 0.3f));
+                EditorGUI.DrawRect(new Rect(sliderRect.x, sliderRect.yMax - 1f, sliderRect.width, 1f), new Color(0f, 0f, 0f, isActive ? 0.6f : 0.4f));
+                if (isActive)
+                    DrawHandle(sliderRect, selection);
+            }
+
+            return HandleSliderInput(sliderRect, mode, selection);
+        }
+
         private static OrganizadinhoColorSelection DrawSpecialColorControls(OrganizadinhoColorSelection selection)
         {
             EditorGUILayout.BeginHorizontal();
-            selection = DrawColorModeButton("Base", OrganizadinhoColorMode.Base, ColorPaletteUtility.FromHue(selection.Hue), selection);
             selection = DrawColorModeButton("White", OrganizadinhoColorMode.White, ColorPaletteUtility.GetBaseColor(OrganizadinhoColorMode.White, selection.Hue), selection);
             selection = DrawColorModeButton("Black", OrganizadinhoColorMode.Black, ColorPaletteUtility.GetBaseColor(OrganizadinhoColorMode.Black, selection.Hue), selection);
             EditorGUILayout.EndHorizontal();
@@ -119,7 +134,10 @@ namespace Organizadinho.Editor.UI
             return selection;
         }
 
-        private static OrganizadinhoColorSelection HandleSliderInput(Rect sliderRect, OrganizadinhoColorSelection selection)
+        private static OrganizadinhoColorSelection HandleSliderInput(
+            Rect sliderRect,
+            OrganizadinhoColorMode mode,
+            OrganizadinhoColorSelection selection)
         {
             var currentEvent = Event.current;
             if (currentEvent == null)
@@ -140,7 +158,7 @@ namespace Organizadinho.Editor.UI
                         currentEvent.Use();
                         GUI.changed = true;
                         RepaintActiveWindow();
-                        return SelectionFromMouse(sliderRect, currentEvent.mousePosition);
+                        return SelectionFromMouse(sliderRect, currentEvent.mousePosition, mode);
                     }
                     break;
 
@@ -150,7 +168,7 @@ namespace Organizadinho.Editor.UI
                         currentEvent.Use();
                         GUI.changed = true;
                         RepaintActiveWindow();
-                        return SelectionFromMouse(sliderRect, currentEvent.mousePosition);
+                        return SelectionFromMouse(sliderRect, currentEvent.mousePosition, mode);
                     }
                     break;
 
@@ -180,9 +198,13 @@ namespace Organizadinho.Editor.UI
             return selection;
         }
 
-        private static OrganizadinhoColorSelection SelectionFromMouse(Rect sliderRect, Vector2 mousePosition)
+        private static OrganizadinhoColorSelection SelectionFromMouse(
+            Rect sliderRect,
+            Vector2 mousePosition,
+            OrganizadinhoColorMode mode)
         {
-            return OrganizadinhoColorSelection.Base(
+            return new OrganizadinhoColorSelection(
+                mode,
                 Mathf.Clamp01((mousePosition.x - sliderRect.x) / sliderRect.width));
         }
 
@@ -226,15 +248,21 @@ namespace Organizadinho.Editor.UI
                 EditorStyles.miniLabel);
         }
 
-        private static Texture2D GetGradientTexture()
+        private static Texture2D GetGradientTexture(OrganizadinhoColorMode mode)
         {
-            if (_gradientTexture != null)
+            switch (mode)
             {
-                return _gradientTexture;
+                case OrganizadinhoColorMode.Vibrant:
+                    return _vibrantGradientTexture ?? (_vibrantGradientTexture = CreateGradientTexture(mode));
+                default:
+                    return _pastelGradientTexture ?? (_pastelGradientTexture = CreateGradientTexture(OrganizadinhoColorMode.Pastel));
             }
+        }
 
+        private static Texture2D CreateGradientTexture(OrganizadinhoColorMode mode)
+        {
             const int width = 256;
-            _gradientTexture = new Texture2D(width, 1, TextureFormat.RGBA32, false)
+            var texture = new Texture2D(width, 1, TextureFormat.RGBA32, false)
             {
                 wrapMode = TextureWrapMode.Clamp,
                 filterMode = FilterMode.Bilinear
@@ -243,11 +271,11 @@ namespace Organizadinho.Editor.UI
             for (var index = 0; index < width; index++)
             {
                 var hue = index / (float)(width - 1);
-                _gradientTexture.SetPixel(index, 0, ColorPaletteUtility.FromHue(hue));
+                texture.SetPixel(index, 0, ColorPaletteUtility.FromHue(mode, hue));
             }
 
-            _gradientTexture.Apply();
-            return _gradientTexture;
+            texture.Apply();
+            return texture;
         }
     }
 }

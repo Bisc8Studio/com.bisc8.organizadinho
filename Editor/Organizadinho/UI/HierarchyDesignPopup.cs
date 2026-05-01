@@ -43,7 +43,7 @@ public class HierarchyDesignPopup : PopupWindowContent
 
         if (_hd != null && _hd.isOrganizer)
         {
-            h += ln * 7f;
+            h += ln * 9f;
             h += ln;
             h += 60f;
             h += ln;
@@ -102,10 +102,10 @@ public class HierarchyDesignPopup : PopupWindowContent
         if (_hd == null || !_hd.isOrganizer)
             return;
 
-        var currentMode = _hd != null ? _hd.colorMode : OrganizadinhoColorMode.Base;
+        var currentMode = _hd != null ? _hd.colorMode : OrganizadinhoColorMode.Pastel;
         var currentHue = _hd != null ? _hd.colorHue : ColorPaletteUtility.DefaultHue;
         var newColor = ColorHueSlider.DrawColorSlider(
-            "Base Color",
+            "Color",
             currentMode,
             currentHue,
             "Organizer preview");
