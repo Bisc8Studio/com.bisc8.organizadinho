@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using Organizadinho.Editor.Settings;
 using Organizadinho.Editor.UI;
 using Organizadinho.Editor.Utilities;
 using Organizadinho.Runtime;
@@ -75,8 +76,9 @@ public static class HierarchyDesignDrawer
             return;
 
         HierarchyDesign hd = go.GetComponent<HierarchyDesign>();
+        bool hierarchyColorsEnabled = OrganizadinhoUserPreferences.EnableHierarchyColors;
 
-        if (hd != null && hd.isOrganizer)
+        if (hierarchyColorsEnabled && hd != null && hd.isOrganizer)
         {
             hd.EnsureColorData();
             var palette = ColorPaletteUtility.BuildPalette(hd.colorMode, hd.colorHue);
@@ -133,7 +135,7 @@ public static class HierarchyDesignDrawer
             }
         }
 
-        if ((hd == null || !hd.isOrganizer) && Event.current.type == EventType.Repaint)
+        if (hierarchyColorsEnabled && (hd == null || !hd.isOrganizer) && Event.current.type == EventType.Repaint)
         {
             var parentOrg = FindPropagatingAncestor(go);
             if (parentOrg != null)
@@ -159,7 +161,9 @@ public static class HierarchyDesignDrawer
         if (Event.current.type == EventType.Repaint)
         {
             Color dotColor = (hd != null && hd.isOrganizer)
-                ? ColorPaletteUtility.BuildPalette(hd.colorMode, hd.colorHue).BaseColor
+                ? hierarchyColorsEnabled
+                    ? ColorPaletteUtility.BuildPalette(hd.colorMode, hd.colorHue).BaseColor
+                    : new Color(0.5f, 0.5f, 0.5f, 0.45f)
                 : new Color(0.5f, 0.5f, 0.5f, 0.25f);
             GUI.DrawTexture(dotRect, GetOrCreateCircleTexture(dotColor), ScaleMode.StretchToFill);
         }

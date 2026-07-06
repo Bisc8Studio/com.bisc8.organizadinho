@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using Organizadinho.Editor.Settings;
 using Organizadinho.Editor.Storage;
 using Organizadinho.Editor.UI;
 using Organizadinho.Editor.Utilities;
@@ -37,13 +38,18 @@ public static class FolderDesignDrawer
             return;
 
         var renderData = FolderDesignRenderCache.Get(guid, path);
-        if (!renderData.Style.HasVisualOverride)
+        if (!renderData.Style.HasVisualOverride ||
+            (!OrganizadinhoUserPreferences.EnableFolderColors && !renderData.Style.HasCustomIcon))
             return;
 
         var isIconView = selectionRect.height > 20f;
         var iconRect = GetFolderIconRect(selectionRect, isIconView);
 
-        DrawFolderIcon(renderData, iconRect, IsSelected(guid), selectionRect.Contains(Event.current.mousePosition));
+        if (OrganizadinhoUserPreferences.EnableFolderColors)
+        {
+            DrawFolderIcon(renderData, iconRect, IsSelected(guid), selectionRect.Contains(Event.current.mousePosition));
+        }
+
         DrawBadgeIcon(renderData.Style, iconRect, isIconView);
     }
 

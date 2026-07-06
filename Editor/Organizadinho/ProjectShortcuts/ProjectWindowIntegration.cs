@@ -4,6 +4,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Organizadinho.Editor.Settings;
 
 namespace Organizadinho.Editor.ProjectShortcuts
 {
@@ -99,6 +100,7 @@ internal static class ProjectWindowIntegration
         }
 
         EditorApplication.update += OnEditorUpdate;
+        OrganizadinhoUserPreferences.Changed += OnPreferencesChanged;
     }
 
     internal static void OpenFolder(EditorWindow projectBrowser, UnityEngine.Object folder)
@@ -316,6 +318,12 @@ internal static class ProjectWindowIntegration
             return;
         }
 
+        if (!OrganizadinhoUserPreferences.EnableProjectToolbar)
+        {
+            RemoveToolbarHost(root);
+            return;
+        }
+
         var existingHost = root.Q<VisualElement>(ToolbarHostName);
         if (existingHost != null)
         {
@@ -354,6 +362,35 @@ internal static class ProjectWindowIntegration
         }
 
         root.Insert(0, host);
+    }
+
+    private static void OnPreferencesChanged()
+    {
+        var browsers = GetProjectBrowsers();
+        for (var index = 0; index < browsers.Length; index++)
+        {
+            var browser = browsers[index];
+            if (browser == null || browser.rootVisualElement == null)
+            {
+                continue;
+            }
+
+            if (!OrganizadinhoUserPreferences.EnableProjectToolbar)
+            {
+                RemoveToolbarHost(browser.rootVisualElement);
+            }
+
+            browser.Repaint();
+        }
+    }
+
+    private static void RemoveToolbarHost(VisualElement root)
+    {
+        var existingHost = root?.Q<VisualElement>(ToolbarHostName);
+        if (existingHost?.parent != null)
+        {
+            existingHost.parent.Remove(existingHost);
+        }
     }
 
     private static bool IsActiveProjectBrowser(EditorWindow browser)

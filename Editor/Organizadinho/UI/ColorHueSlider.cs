@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using Organizadinho.Editor.Settings;
 using Organizadinho.Editor.Utilities;
 using Organizadinho.Runtime;
 
@@ -41,8 +42,12 @@ namespace Organizadinho.Editor.UI
             pasted = false;
 
             var selection = new OrganizadinhoColorSelection(currentMode, currentHue);
-            selection = DrawSliderRow("Pastel", OrganizadinhoColorMode.Pastel, selection);
-            selection = DrawSliderRow("Vibrant", OrganizadinhoColorMode.Vibrant, selection);
+            if (OrganizadinhoUserPreferences.ShowPastelPalette || currentMode == OrganizadinhoColorMode.Pastel)
+                selection = DrawSliderRow("Pastel", OrganizadinhoColorMode.Pastel, selection);
+
+            if (OrganizadinhoUserPreferences.ShowVibrantPalette || currentMode == OrganizadinhoColorMode.Vibrant)
+                selection = DrawSliderRow("Vibrant", OrganizadinhoColorMode.Vibrant, selection);
+
             selection = DrawSpecialColorControls(selection);
             selection = DrawClipboardControls(selection, out pasted);
 
