@@ -61,8 +61,13 @@ namespace Organizadinho.Editor.Utilities
 
         internal static ColorPalette BuildPalette(OrganizadinhoColorMode mode, float hue)
         {
+            return BuildPalette(mode, hue, GetDefaultCustomColor());
+        }
+
+        internal static ColorPalette BuildPalette(OrganizadinhoColorMode mode, float hue, Color customColor)
+        {
             var normalizedHue = Mathf.Repeat(hue, 1f);
-            var baseColor = GetBaseColor(mode, normalizedHue);
+            var baseColor = GetBaseColor(mode, normalizedHue, customColor);
             var chrome = GetProjectChromeColor();
             var selection = GetUnitySelectionColor();
             var isVibrant = mode == OrganizadinhoColorMode.Vibrant;
@@ -78,7 +83,7 @@ namespace Organizadinho.Editor.Utilities
             var selected = Color.Lerp(baseColor, selection, isVibrant ? 0.34f : 0.28f);
             var border = GetBorderColor(mode, baseColor);
 
-            var children = GetChildrenColor(mode, normalizedHue);
+            var children = GetChildrenColor(mode, normalizedHue, customColor);
 
             return new ColorPalette(
                 baseColor,
@@ -105,8 +110,16 @@ namespace Organizadinho.Editor.Utilities
 
         internal static Color GetBaseColor(OrganizadinhoColorMode mode, float hue)
         {
+            return GetBaseColor(mode, hue, GetDefaultCustomColor());
+        }
+
+        internal static Color GetBaseColor(OrganizadinhoColorMode mode, float hue, Color customColor)
+        {
             switch (mode)
             {
+                case OrganizadinhoColorMode.Custom:
+                    customColor.a = 1f;
+                    return customColor;
                 case OrganizadinhoColorMode.White:
                     return EditorGUIUtility.isProSkin
                         ? new Color(0.92f, 0.92f, 0.9f, 1f)
@@ -122,11 +135,14 @@ namespace Organizadinho.Editor.Utilities
             }
         }
 
-        private static Color GetChildrenColor(OrganizadinhoColorMode mode, float hue)
+        private static Color GetChildrenColor(OrganizadinhoColorMode mode, float hue, Color customColor)
         {
             Color children;
             switch (mode)
             {
+                case OrganizadinhoColorMode.Custom:
+                    children = Color.Lerp(customColor, GetProjectChromeColor(), EditorGUIUtility.isProSkin ? 0.36f : 0.24f);
+                    break;
                 case OrganizadinhoColorMode.White:
                     children = EditorGUIUtility.isProSkin
                         ? new Color(0.9f, 0.9f, 0.88f, 1f)
@@ -147,7 +163,7 @@ namespace Organizadinho.Editor.Utilities
 
             children.a = mode == OrganizadinhoColorMode.Black
                 ? 0.28f
-                : (mode == OrganizadinhoColorMode.Vibrant ? 0.24f : 0.35f);
+                : (mode == OrganizadinhoColorMode.Vibrant || mode == OrganizadinhoColorMode.Custom ? 0.24f : 0.35f);
             return children;
         }
 
@@ -217,6 +233,11 @@ namespace Organizadinho.Editor.Utilities
             return EditorGUIUtility.isProSkin
                 ? new Color(0.24f, 0.49f, 0.9f, 1f)
                 : new Color(0.29f, 0.53f, 0.91f, 1f);
+        }
+
+        private static Color GetDefaultCustomColor()
+        {
+            return FromHue(DefaultHue, PastelSaturation, PastelValue);
         }
     }
 }

@@ -96,7 +96,7 @@ namespace Organizadinho.Editor.Utilities
                 hasDirectConfiguration,
                 colorEntry != null && colorEntry.hasColor,
                 colorEntry != null && colorEntry.hasColor
-                    ? ColorPaletteUtility.GetBaseColor(colorEntry.colorMode, colorEntry.hue)
+                    ? ColorPaletteUtility.GetBaseColor(colorEntry.colorMode, colorEntry.hue, colorEntry.customColor)
                     : default,
                 colorSource,
                 directEntry?.iconGuid);

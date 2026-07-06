@@ -33,7 +33,7 @@ public class HierarchyDesignInspector : UnityEditor.Editor
         if (hd.isOrganizer)
         {
             hd.EnsureColorData();
-            var palette = ColorPaletteUtility.BuildPalette(hd.colorMode, hd.colorHue);
+            var palette = ColorPaletteUtility.BuildPalette(hd.colorMode, hd.colorHue, hd.customColor);
             GUILayout.Space(4f);
             Rect previewRect = EditorGUILayout.GetControlRect(GUILayout.Height(28f));
 

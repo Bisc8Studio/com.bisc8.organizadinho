@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using Organizadinho.Editor.Settings;
 using Organizadinho.Editor.Storage;
 using Organizadinho.Editor.Utilities;
 using Organizadinho.Runtime;
@@ -33,6 +34,9 @@ public class FolderDesignPopup : PopupWindowContent
         float h = 8f;
         h += ln + 2f;
         h += ln * 9f;
+        if (OrganizadinhoUserPreferences.ShowCustomColor || _entry.colorMode == OrganizadinhoColorMode.Custom)
+            h += ln;
+
         h += 7f;
         h += ln;
         h += 90f;
@@ -53,10 +57,12 @@ public class FolderDesignPopup : PopupWindowContent
 
         var currentMode = _entry.colorMode;
         var currentHue = _entry.hue;
+        var currentCustomColor = _entry.customColor;
         var newColor = ColorHueSlider.DrawColorSlider(
             "Color",
             currentMode,
             currentHue,
+            currentCustomColor,
             "Folder preview",
             out var pastedColor);
 
@@ -74,12 +80,14 @@ public class FolderDesignPopup : PopupWindowContent
         if (EditorGUI.EndChangeCheck() ||
             pastedColor ||
             currentMode != newColor.Mode ||
-            !Mathf.Approximately(currentHue, newColor.Hue))
+            !Mathf.Approximately(currentHue, newColor.Hue) ||
+            currentCustomColor != newColor.CustomColor)
         {
             _entry.hasColor = newHasColor;
             _entry.propagateChildren = newPropagate;
             _entry.colorMode = newColor.Mode;
             _entry.hue = newColor.Hue;
+            _entry.customColor = newColor.CustomColor;
             storage.NotifyChanged();
             editorWindow?.Repaint();
         }
@@ -108,7 +116,7 @@ public class FolderDesignPopup : PopupWindowContent
 
     private void DrawIconPicker(FolderDesignStorage storage)
     {
-        var palette = ColorPaletteUtility.BuildPalette(_entry.colorMode, _entry.hue);
+        var palette = ColorPaletteUtility.BuildPalette(_entry.colorMode, _entry.hue, _entry.customColor);
         HierarchyDesignPopup.EnsureIconFolderExists();
         var icons = GetIcons();
 

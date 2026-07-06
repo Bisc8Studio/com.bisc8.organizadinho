@@ -17,6 +17,7 @@ namespace Organizadinho.Editor.Storage
         public bool propagateChildren;
         public OrganizadinhoColorMode colorMode = OrganizadinhoColorMode.Pastel;
         public float hue = ColorPaletteUtility.DefaultHue;
+        public Color customColor = ColorPaletteUtility.GetBaseColor(OrganizadinhoColorMode.Pastel, ColorPaletteUtility.DefaultHue);
         public string iconGuid = "";
     }
 
@@ -24,7 +25,7 @@ namespace Organizadinho.Editor.Storage
     public class FolderDesignStorage : ScriptableSingleton<FolderDesignStorage>
     {
         private const string ProjectSettingsAssetPath = "ProjectSettings/Organizadinho/FolderDesignStorage.asset";
-        private const int CurrentVersion = 3;
+        private const int CurrentVersion = 4;
 
         [SerializeField] public List<FolderDesignEntry> entries = new List<FolderDesignEntry>();
         [SerializeField] private int _storageVersion;
@@ -59,7 +60,8 @@ namespace Organizadinho.Editor.Storage
             {
                 guid = folderGuid,
                 colorMode = OrganizadinhoColorMode.Pastel,
-                hue = ColorPaletteUtility.DefaultHue
+                hue = ColorPaletteUtility.DefaultHue,
+                customColor = ColorPaletteUtility.GetBaseColor(OrganizadinhoColorMode.Pastel, ColorPaletteUtility.DefaultHue)
             };
             entries.Add(entry);
             return entry;
@@ -197,6 +199,10 @@ namespace Organizadinho.Editor.Storage
                     entry.colorMode = OrganizadinhoColorMode.Pastel;
 
                 entry.hue = ColorPaletteUtility.NormalizeHue(entry.hue);
+                if (entry.customColor.a <= 0f)
+                    entry.customColor = ColorPaletteUtility.GetBaseColor(OrganizadinhoColorMode.Pastel, ColorPaletteUtility.DefaultHue);
+
+                entry.customColor.a = 1f;
             }
         }
 
@@ -211,6 +217,11 @@ namespace Organizadinho.Editor.Storage
                     continue;
                 }
 
+                var customColor = sourceEntry.customColor.a <= 0f
+                    ? ColorPaletteUtility.GetBaseColor(OrganizadinhoColorMode.Pastel, ColorPaletteUtility.DefaultHue)
+                    : sourceEntry.customColor;
+                customColor.a = 1f;
+
                 clonedEntries.Add(new FolderDesignEntry
                 {
                     guid = sourceEntry.guid,
@@ -218,6 +229,7 @@ namespace Organizadinho.Editor.Storage
                     propagateChildren = sourceEntry.propagateChildren,
                     colorMode = sourceEntry.colorMode,
                     hue = sourceEntry.hue,
+                    customColor = customColor,
                     iconGuid = sourceEntry.iconGuid
                 });
             }

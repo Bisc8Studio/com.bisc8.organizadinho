@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using Organizadinho.Editor.Drawing;
+using Organizadinho.Editor.Settings;
 using Organizadinho.Editor.Utilities;
 using Organizadinho.Runtime;
 
@@ -44,6 +45,9 @@ public class HierarchyDesignPopup : PopupWindowContent
         if (_hd != null && _hd.isOrganizer)
         {
             h += ln * 9f;
+            if (OrganizadinhoUserPreferences.ShowCustomColor || _hd.colorMode == OrganizadinhoColorMode.Custom)
+                h += ln;
+
             h += ln;
             h += 60f;
             h += ln;
@@ -104,17 +108,22 @@ public class HierarchyDesignPopup : PopupWindowContent
 
         var currentMode = _hd != null ? _hd.colorMode : OrganizadinhoColorMode.Pastel;
         var currentHue = _hd != null ? _hd.colorHue : ColorPaletteUtility.DefaultHue;
+        var currentCustomColor = _hd != null ? _hd.customColor : ColorPaletteUtility.GetBaseColor(OrganizadinhoColorMode.Pastel, ColorPaletteUtility.DefaultHue);
         var newColor = ColorHueSlider.DrawColorSlider(
             "Color",
             currentMode,
             currentHue,
+            currentCustomColor,
             "Organizer preview");
         if (_hd != null &&
-            (_hd.colorMode != newColor.Mode || !Mathf.Approximately(currentHue, newColor.Hue)))
+            (_hd.colorMode != newColor.Mode ||
+             !Mathf.Approximately(currentHue, newColor.Hue) ||
+             _hd.customColor != newColor.CustomColor))
         {
             Undo.RecordObject(_hd, "Edit Organizer Color");
             _hd.colorMode = newColor.Mode;
             _hd.colorHue = newColor.Hue;
+            _hd.customColor = newColor.CustomColor;
             EditorUtility.SetDirty(_hd);
             HierarchyDesignDrawer.ClearCache();
             EditorApplication.RepaintHierarchyWindow();
@@ -139,7 +148,7 @@ public class HierarchyDesignPopup : PopupWindowContent
         GUILayout.Space(4f);
 
         _hd.EnsureColorData();
-        var palette = ColorPaletteUtility.BuildPalette(_hd.colorMode, _hd.colorHue);
+        var palette = ColorPaletteUtility.BuildPalette(_hd.colorMode, _hd.colorHue, _hd.customColor);
         Rect previewRect = EditorGUILayout.GetControlRect(GUILayout.Height(54f));
         GUI.DrawTexture(
             previewRect,
@@ -184,7 +193,7 @@ public class HierarchyDesignPopup : PopupWindowContent
 
     private void DrawFontPicker()
     {
-        var palette = ColorPaletteUtility.BuildPalette(_hd.colorMode, _hd.colorHue);
+        var palette = ColorPaletteUtility.BuildPalette(_hd.colorMode, _hd.colorHue, _hd.customColor);
         EnsureFolderExists(OrganizadinhoResourcesRoot, "Fonts");
         var fonts = GetFolderFonts();
         EditorGUILayout.LabelField("Font  (" + FontFolder + "/)", EditorStyles.centeredGreyMiniLabel);
@@ -253,7 +262,7 @@ public class HierarchyDesignPopup : PopupWindowContent
 
     private void DrawIconPicker()
     {
-        var palette = ColorPaletteUtility.BuildPalette(_hd.colorMode, _hd.colorHue);
+        var palette = ColorPaletteUtility.BuildPalette(_hd.colorMode, _hd.colorHue, _hd.customColor);
         EnsureIconFolderExists();
         var icons = GetFolderIcons();
         EditorGUILayout.LabelField("Custom Icon  (" + IconFolder + "/)", EditorStyles.centeredGreyMiniLabel);

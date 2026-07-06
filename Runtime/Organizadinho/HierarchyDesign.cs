@@ -10,8 +10,9 @@ namespace Organizadinho.Runtime
 [DisallowMultipleComponent]
 public class HierarchyDesign : MonoBehaviour
 {
-    private const int CurrentVersion = 1;
+    private const int CurrentVersion = 2;
     private const float DefaultHue = 0.58f;
+    private static readonly Color DefaultCustomColor = new Color(0.62f, 0.78f, 0.96f, 1f);
 
     public enum FadeMode { LeftToRight, RightToLeft, CenterOut, CenterIn }
 
@@ -20,6 +21,7 @@ public class HierarchyDesign : MonoBehaviour
     public bool propagateToChildren = false;
     [HideInInspector] public OrganizadinhoColorMode colorMode = OrganizadinhoColorMode.Pastel;
     [HideInInspector] public float colorHue = DefaultHue;
+    [HideInInspector] public Color customColor = DefaultCustomColor;
     public Font customFont = null;
     [Range(8, 20)]
     public int fontSize = 12;
@@ -29,18 +31,27 @@ public class HierarchyDesign : MonoBehaviour
 
     public void EnsureColorData()
     {
-        if (_dataVersion < CurrentVersion)
+        if (_dataVersion < 1)
         {
             colorMode = OrganizadinhoColorMode.Pastel;
             colorHue = DefaultHue;
+            customColor = DefaultCustomColor;
+            _dataVersion = 1;
+        }
+
+        if (_dataVersion < 2)
+        {
+            if (customColor.a <= 0f)
+                customColor = DefaultCustomColor;
+
             _dataVersion = CurrentVersion;
-            return;
         }
 
         if (!System.Enum.IsDefined(typeof(OrganizadinhoColorMode), colorMode))
             colorMode = OrganizadinhoColorMode.Pastel;
 
         colorHue = Mathf.Repeat(colorHue, 1f);
+        customColor.a = 1f;
     }
 
 #if UNITY_EDITOR

@@ -28,7 +28,23 @@ namespace Organizadinho.Editor.UI
             float currentHue,
             string previewLabel)
         {
-            return DrawColorSlider(label, currentMode, currentHue, previewLabel, out _);
+            return DrawColorSlider(
+                label,
+                currentMode,
+                currentHue,
+                ColorPaletteUtility.GetBaseColor(OrganizadinhoColorMode.Pastel, ColorPaletteUtility.DefaultHue),
+                previewLabel,
+                out _);
+        }
+
+        internal static OrganizadinhoColorSelection DrawColorSlider(
+            string label,
+            OrganizadinhoColorMode currentMode,
+            float currentHue,
+            Color currentCustomColor,
+            string previewLabel)
+        {
+            return DrawColorSlider(label, currentMode, currentHue, currentCustomColor, previewLabel, out _);
         }
 
         internal static OrganizadinhoColorSelection DrawColorSlider(
@@ -38,10 +54,27 @@ namespace Organizadinho.Editor.UI
             string previewLabel,
             out bool pasted)
         {
+            return DrawColorSlider(
+                label,
+                currentMode,
+                currentHue,
+                ColorPaletteUtility.GetBaseColor(OrganizadinhoColorMode.Pastel, ColorPaletteUtility.DefaultHue),
+                previewLabel,
+                out pasted);
+        }
+
+        internal static OrganizadinhoColorSelection DrawColorSlider(
+            string label,
+            OrganizadinhoColorMode currentMode,
+            float currentHue,
+            Color currentCustomColor,
+            string previewLabel,
+            out bool pasted)
+        {
             EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
             pasted = false;
 
-            var selection = new OrganizadinhoColorSelection(currentMode, currentHue);
+            var selection = new OrganizadinhoColorSelection(currentMode, currentHue, currentCustomColor);
             if (OrganizadinhoUserPreferences.ShowPastelPalette || currentMode == OrganizadinhoColorMode.Pastel)
                 selection = DrawSliderRow("Pastel", OrganizadinhoColorMode.Pastel, selection);
 
@@ -49,6 +82,9 @@ namespace Organizadinho.Editor.UI
                 selection = DrawSliderRow("Vibrant", OrganizadinhoColorMode.Vibrant, selection);
 
             selection = DrawSpecialColorControls(selection);
+            if (OrganizadinhoUserPreferences.ShowCustomColor || currentMode == OrganizadinhoColorMode.Custom)
+                selection = DrawCustomColorControl(selection);
+
             selection = DrawClipboardControls(selection, out pasted);
 
             var previewRect = EditorGUILayout.GetControlRect(GUILayout.Height(18f));
@@ -99,20 +135,44 @@ namespace Organizadinho.Editor.UI
         {
             var previousBackground = GUI.backgroundColor;
             GUI.backgroundColor = selection.Mode == mode
-                ? ColorPaletteUtility.BuildPalette(mode, selection.Hue).SelectedColor
+                ? ColorPaletteUtility.BuildPalette(mode, selection.Hue, selection.CustomColor).SelectedColor
                 : previousBackground;
 
             var content = new GUIContent("  " + label);
             var rect = GUILayoutUtility.GetRect(content, GUI.skin.button, GUILayout.Height(20f));
             if (GUI.Button(rect, content))
-                selection = new OrganizadinhoColorSelection(mode, selection.Hue);
+                selection = new OrganizadinhoColorSelection(mode, selection.Hue, selection.CustomColor);
 
             var swatchRect = new Rect(rect.x + 6f, rect.y + 4f, 12f, rect.height - 8f);
             EditorGUI.DrawRect(swatchRect, swatchColor);
             EditorGUI.DrawRect(new Rect(swatchRect.x, swatchRect.yMax - 1f, swatchRect.width, 1f),
-                ColorPaletteUtility.BuildPalette(mode, selection.Hue).BorderColor);
+                ColorPaletteUtility.BuildPalette(mode, selection.Hue, selection.CustomColor).BorderColor);
 
             GUI.backgroundColor = previousBackground;
+            return selection;
+        }
+
+        private static OrganizadinhoColorSelection DrawCustomColorControl(OrganizadinhoColorSelection selection)
+        {
+            EditorGUILayout.BeginHorizontal();
+
+            var isActive = selection.Mode == OrganizadinhoColorMode.Custom;
+            var previousBackground = GUI.backgroundColor;
+            GUI.backgroundColor = isActive
+                ? ColorPaletteUtility.BuildPalette(OrganizadinhoColorMode.Custom, selection.Hue, selection.CustomColor).SelectedColor
+                : previousBackground;
+
+            if (GUILayout.Button("Custom", GUILayout.Width(76f), GUILayout.Height(20f)))
+                selection = new OrganizadinhoColorSelection(OrganizadinhoColorMode.Custom, selection.Hue, selection.CustomColor);
+
+            GUI.backgroundColor = previousBackground;
+
+            EditorGUI.BeginChangeCheck();
+            var customColor = EditorGUILayout.ColorField(GUIContent.none, selection.CustomColor, false, false, false, GUILayout.Height(20f));
+            if (EditorGUI.EndChangeCheck())
+                selection = new OrganizadinhoColorSelection(OrganizadinhoColorMode.Custom, selection.Hue, customColor);
+
+            EditorGUILayout.EndHorizontal();
             return selection;
         }
 
@@ -163,7 +223,7 @@ namespace Organizadinho.Editor.UI
                         currentEvent.Use();
                         GUI.changed = true;
                         RepaintActiveWindow();
-                        return SelectionFromMouse(sliderRect, currentEvent.mousePosition, mode);
+                        return SelectionFromMouse(sliderRect, currentEvent.mousePosition, mode, selection.CustomColor);
                     }
                     break;
 
@@ -173,7 +233,7 @@ namespace Organizadinho.Editor.UI
                         currentEvent.Use();
                         GUI.changed = true;
                         RepaintActiveWindow();
-                        return SelectionFromMouse(sliderRect, currentEvent.mousePosition, mode);
+                        return SelectionFromMouse(sliderRect, currentEvent.mousePosition, mode, selection.CustomColor);
                     }
                     break;
 
@@ -206,11 +266,13 @@ namespace Organizadinho.Editor.UI
         private static OrganizadinhoColorSelection SelectionFromMouse(
             Rect sliderRect,
             Vector2 mousePosition,
-            OrganizadinhoColorMode mode)
+            OrganizadinhoColorMode mode,
+            Color customColor)
         {
             return new OrganizadinhoColorSelection(
                 mode,
-                Mathf.Clamp01((mousePosition.x - sliderRect.x) / sliderRect.width));
+                Mathf.Clamp01((mousePosition.x - sliderRect.x) / sliderRect.width),
+                customColor);
         }
 
         private static void ReleaseSliderControl(int controlId)
@@ -236,12 +298,12 @@ namespace Organizadinho.Editor.UI
             EditorGUI.DrawRect(handleRect, new Color(0f, 0f, 0f, 0.55f));
             EditorGUI.DrawRect(
                 new Rect(handleRect.x + 1f, handleRect.y + 1f, handleRect.width - 2f, handleRect.height - 2f),
-                ColorPaletteUtility.GetReadableTextColor(ColorPaletteUtility.GetBaseColor(selection.Mode, selection.Hue)));
+                ColorPaletteUtility.GetReadableTextColor(ColorPaletteUtility.GetBaseColor(selection.Mode, selection.Hue, selection.CustomColor)));
         }
 
         private static void DrawPreview(Rect previewRect, OrganizadinhoColorSelection selection, string previewLabel)
         {
-            var palette = ColorPaletteUtility.BuildPalette(selection.Mode, selection.Hue);
+            var palette = ColorPaletteUtility.BuildPalette(selection.Mode, selection.Hue, selection.CustomColor);
             var swatchRect = new Rect(previewRect.x, previewRect.y + 2f, 26f, previewRect.height - 4f);
             EditorGUI.DrawRect(swatchRect, palette.BaseColor);
             EditorGUI.DrawRect(new Rect(swatchRect.x, swatchRect.yMax - 1f, swatchRect.width, 1f), palette.BorderColor);
@@ -262,6 +324,20 @@ namespace Organizadinho.Editor.UI
                 default:
                     return _pastelGradientTexture ?? (_pastelGradientTexture = CreateGradientTexture(OrganizadinhoColorMode.Pastel));
             }
+        }
+
+        internal static void DrawPalettePreview(Rect rect, OrganizadinhoColorMode mode, bool active)
+        {
+            if (Event.current.type != EventType.Repaint)
+                return;
+
+            var previousColor = GUI.color;
+            GUI.color = active ? Color.white : new Color(1f, 1f, 1f, 0.45f);
+            GUI.DrawTexture(rect, GetGradientTexture(mode), ScaleMode.StretchToFill);
+            GUI.color = previousColor;
+
+            EditorGUI.DrawRect(new Rect(rect.x, rect.y, rect.width, 1f), new Color(0f, 0f, 0f, active ? 0.55f : 0.3f));
+            EditorGUI.DrawRect(new Rect(rect.x, rect.yMax - 1f, rect.width, 1f), new Color(0f, 0f, 0f, active ? 0.6f : 0.4f));
         }
 
         private static Texture2D CreateGradientTexture(OrganizadinhoColorMode mode)

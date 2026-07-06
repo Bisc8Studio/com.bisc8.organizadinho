@@ -10,6 +10,7 @@ namespace Organizadinho.Editor.Settings
         private const string KeyPrefix = "com.bisc8.organizadinho.";
         private const string PastelPaletteKey = KeyPrefix + "palette.pastel";
         private const string VibrantPaletteKey = KeyPrefix + "palette.vibrant";
+        private const string CustomColorKey = KeyPrefix + "palette.custom";
         private const string FolderColorsKey = KeyPrefix + "effects.folderColors";
         private const string HierarchyColorsKey = KeyPrefix + "effects.hierarchyColors";
         private const string ProjectToolbarKey = KeyPrefix + "effects.projectToolbar";
@@ -26,6 +27,12 @@ namespace Organizadinho.Editor.Settings
         {
             get => EditorPrefs.GetBool(VibrantPaletteKey, true);
             set => SetBool(VibrantPaletteKey, value);
+        }
+
+        internal static bool ShowCustomColor
+        {
+            get => EditorPrefs.GetBool(CustomColorKey, true);
+            set => SetBool(CustomColorKey, value);
         }
 
         internal static bool EnableFolderColors
@@ -50,6 +57,7 @@ namespace Organizadinho.Editor.Settings
         {
             EditorPrefs.DeleteKey(PastelPaletteKey);
             EditorPrefs.DeleteKey(VibrantPaletteKey);
+            EditorPrefs.DeleteKey(CustomColorKey);
             EditorPrefs.DeleteKey(FolderColorsKey);
             EditorPrefs.DeleteKey(HierarchyColorsKey);
             EditorPrefs.DeleteKey(ProjectToolbarKey);

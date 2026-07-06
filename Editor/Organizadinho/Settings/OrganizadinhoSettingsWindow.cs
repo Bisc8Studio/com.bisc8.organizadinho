@@ -1,5 +1,7 @@
 using UnityEditor;
 using UnityEngine;
+using Organizadinho.Editor.UI;
+using Organizadinho.Runtime;
 
 namespace Organizadinho.Editor.Settings
 {
@@ -7,6 +9,7 @@ namespace Organizadinho.Editor.Settings
     {
         private const float MinWindowWidth = 340f;
         private const float MinWindowHeight = 230f;
+        private const float PalettePreviewWidth = 170f;
 
         [MenuItem("Organizadinho/Settings")]
         private static void Open()
@@ -28,19 +31,22 @@ namespace Organizadinho.Editor.Settings
                 MessageType.None);
 
             EditorGUI.BeginChangeCheck();
-            var showPastel = EditorGUILayout.Toggle("Pastel", OrganizadinhoUserPreferences.ShowPastelPalette);
-            var showVibrant = EditorGUILayout.Toggle("Vibrant", OrganizadinhoUserPreferences.ShowVibrantPalette);
-            if (!showPastel && !showVibrant)
+            var showPastel = DrawPaletteToggle("Pastel", OrganizadinhoColorMode.Pastel, OrganizadinhoUserPreferences.ShowPastelPalette);
+            var showVibrant = DrawPaletteToggle("Vibrant", OrganizadinhoColorMode.Vibrant, OrganizadinhoUserPreferences.ShowVibrantPalette);
+            var showCustom = DrawCustomColorToggle(OrganizadinhoUserPreferences.ShowCustomColor);
+            if (!showPastel && !showVibrant && !showCustom)
             {
-                EditorGUILayout.HelpBox("At least one palette must stay enabled.", MessageType.Warning);
+                EditorGUILayout.HelpBox("At least one color option must stay enabled.", MessageType.Warning);
                 showPastel = OrganizadinhoUserPreferences.ShowPastelPalette;
                 showVibrant = OrganizadinhoUserPreferences.ShowVibrantPalette;
+                showCustom = OrganizadinhoUserPreferences.ShowCustomColor;
             }
 
             if (EditorGUI.EndChangeCheck())
             {
                 OrganizadinhoUserPreferences.ShowPastelPalette = showPastel;
                 OrganizadinhoUserPreferences.ShowVibrantPalette = showVibrant;
+                OrganizadinhoUserPreferences.ShowCustomColor = showCustom;
             }
 
             DrawHorizontalRule();
@@ -76,6 +82,40 @@ namespace Organizadinho.Editor.Settings
             var rect = EditorGUILayout.GetControlRect(GUILayout.Height(1f));
             EditorGUI.DrawRect(rect, new Color(0f, 0f, 0f, EditorGUIUtility.isProSkin ? 0.4f : 0.18f));
             GUILayout.Space(4f);
+        }
+
+        private static bool DrawPaletteToggle(string label, OrganizadinhoColorMode mode, bool value)
+        {
+            var rowRect = EditorGUILayout.GetControlRect(GUILayout.Height(24f));
+            var toggleRect = new Rect(rowRect.x, rowRect.y + 2f, 82f, EditorGUIUtility.singleLineHeight);
+            var previewRect = new Rect(
+                toggleRect.xMax + 8f,
+                rowRect.y + 3f,
+                Mathf.Min(PalettePreviewWidth, rowRect.width - toggleRect.width - 8f),
+                18f);
+
+            value = EditorGUI.ToggleLeft(toggleRect, label, value);
+            ColorHueSlider.DrawPalettePreview(previewRect, mode, value);
+            return value;
+        }
+
+        private static bool DrawCustomColorToggle(bool value)
+        {
+            var rowRect = EditorGUILayout.GetControlRect(GUILayout.Height(24f));
+            var toggleRect = new Rect(rowRect.x, rowRect.y + 2f, 82f, EditorGUIUtility.singleLineHeight);
+            var previewRect = new Rect(
+                toggleRect.xMax + 8f,
+                rowRect.y + 2f,
+                70f,
+                EditorGUIUtility.singleLineHeight);
+
+            value = EditorGUI.ToggleLeft(toggleRect, "Custom", value);
+            using (new EditorGUI.DisabledScope(true))
+            {
+                EditorGUI.ColorField(previewRect, GUIContent.none, new Color(0.62f, 0.78f, 0.96f, value ? 1f : 0.45f), false, false, false);
+            }
+
+            return value;
         }
     }
 }

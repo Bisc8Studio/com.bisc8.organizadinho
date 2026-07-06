@@ -81,7 +81,7 @@ public static class HierarchyDesignDrawer
         if (hierarchyColorsEnabled && hd != null && hd.isOrganizer)
         {
             hd.EnsureColorData();
-            var palette = ColorPaletteUtility.BuildPalette(hd.colorMode, hd.colorHue);
+            var palette = ColorPaletteUtility.BuildPalette(hd.colorMode, hd.colorHue, hd.customColor);
             float bgStartX = selectionRect.x - 28f;
             Rect bgRect = new Rect(bgStartX, selectionRect.y, Screen.width - bgStartX, selectionRect.height);
             Texture2D backgroundTexture = GetOrCreateGradientTexture(palette.BaseColor, HierarchyDesign.FadeMode.LeftToRight);
@@ -143,7 +143,7 @@ public static class HierarchyDesignDrawer
                 parentOrg.EnsureColorData();
                 float rowStartX = selectionRect.x - 42f;
                 Rect rowRect = new Rect(rowStartX, selectionRect.y, Screen.width - rowStartX, selectionRect.height);
-                Color childColor = ColorPaletteUtility.BuildPalette(parentOrg.colorMode, parentOrg.colorHue).ChildrenColor;
+                Color childColor = ColorPaletteUtility.BuildPalette(parentOrg.colorMode, parentOrg.colorHue, parentOrg.customColor).ChildrenColor;
                 GUI.DrawTexture(
                     rowRect,
                     GetOrCreateGradientTexture(childColor, HierarchyDesign.FadeMode.LeftToRight),
@@ -162,7 +162,7 @@ public static class HierarchyDesignDrawer
         {
             Color dotColor = (hd != null && hd.isOrganizer)
                 ? hierarchyColorsEnabled
-                    ? ColorPaletteUtility.BuildPalette(hd.colorMode, hd.colorHue).BaseColor
+                    ? ColorPaletteUtility.BuildPalette(hd.colorMode, hd.colorHue, hd.customColor).BaseColor
                     : new Color(0.5f, 0.5f, 0.5f, 0.45f)
                 : new Color(0.5f, 0.5f, 0.5f, 0.25f);
             GUI.DrawTexture(dotRect, GetOrCreateCircleTexture(dotColor), ScaleMode.StretchToFill);
@@ -187,7 +187,7 @@ public static class HierarchyDesignDrawer
         if (EditorGUIUtility.editingTextField && IsActiveSelection(instanceID) && IsHierarchyFocused())
             return;
 
-        var palette = ColorPaletteUtility.BuildPalette(hd.colorMode, hd.colorHue);
+        var palette = ColorPaletteUtility.BuildPalette(hd.colorMode, hd.colorHue, hd.customColor);
         const float iconWidth = 16f;
         const float gap = 2f;
         Rect labelRect = new Rect(

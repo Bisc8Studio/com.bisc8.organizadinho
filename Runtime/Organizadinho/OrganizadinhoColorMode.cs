@@ -5,6 +5,7 @@ namespace Organizadinho.Runtime
         Pastel = 0,
         White = 1,
         Black = 2,
-        Vibrant = 3
+        Vibrant = 3,
+        Custom = 4
     }
 }
