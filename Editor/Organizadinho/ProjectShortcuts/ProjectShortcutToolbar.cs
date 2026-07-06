@@ -10,6 +10,10 @@ namespace Organizadinho.Editor.ProjectShortcuts
 
 internal sealed class ProjectShortcutToolbar : VisualElement
 {
+    private const string ShortcutButtonClassName = "organizadinho-project-shortcut-button";
+    private const string ShortcutPlaceholderClassName = "organizadinho-project-shortcut-placeholder";
+    private const float ShortcutDragThreshold = 4f;
+
     private readonly Button _compactSearchButton;
     private readonly ToolbarSearchField _searchField;
     private readonly ScrollView _shortcutScroll;
@@ -17,6 +21,16 @@ internal sealed class ProjectShortcutToolbar : VisualElement
     private EditorWindow _projectBrowser;
     private string _searchText = string.Empty;
     private bool _searchExpanded;
+    private string _pressedShortcutGuid;
+    private FolderShortcutData _pressedShortcut;
+    private Vector2 _pressedShortcutPosition;
+    private Button _pressedShortcutButton;
+    private Button _draggedShortcutButton;
+    private VisualElement _shortcutPlaceholder;
+    private VisualElement _shortcutDragEventRoot;
+    private float _shortcutDragGrabOffsetX;
+    private float _shortcutDragTop;
+    private bool _suppressShortcutClick;
 
     internal ProjectShortcutToolbar()
     {
@@ -92,6 +106,7 @@ internal sealed class ProjectShortcutToolbar : VisualElement
         FolderShortcutStorage.Changed -= RebuildShortcutButtons;
         FolderDesignStorage.Changed -= RebuildShortcutButtons;
         EditorApplication.projectChanged -= RebuildShortcutButtons;
+        ResetShortcutPressState();
     }
 
     private void OnSearchChanged(ChangeEvent<string> evt)
@@ -184,10 +199,23 @@ internal sealed class ProjectShortcutToolbar : VisualElement
     private Button CreateShortcutButton(FolderShortcutData shortcut)
     {
         var style = FolderDesignStyleResolver.Resolve(shortcut.Guid, shortcut.AssetPath);
-        var button = new Button(() => ProjectWindowNavigator.OpenFolder(_projectBrowser, shortcut.AssetPath))
+        var button = new Button
         {
             tooltip = shortcut.AssetPath
         };
+        button.clicked += () =>
+        {
+            if (_suppressShortcutClick)
+            {
+                _suppressShortcutClick = false;
+                return;
+            }
+
+            ProjectWindowNavigator.OpenFolder(_projectBrowser, shortcut.AssetPath);
+        };
+
+        button.AddToClassList(ShortcutButtonClassName);
+        button.userData = shortcut.Guid;
 
         button.style.height = 18f;
         button.style.minHeight = 18f;
@@ -208,6 +236,9 @@ internal sealed class ProjectShortcutToolbar : VisualElement
         {
             evt.menu.AppendAction("Remove Shortcut", _ => FolderShortcutStorage.RemoveShortcut(shortcut.Guid));
         }));
+        button.RegisterCallback<MouseDownEvent>(evt => OnShortcutMouseDown(evt, button, shortcut), TrickleDown.TrickleDown);
+        button.RegisterCallback<MouseMoveEvent>(evt => OnShortcutMouseMove(evt, button, shortcut), TrickleDown.TrickleDown);
+        button.RegisterCallback<MouseUpEvent>(evt => OnShortcutMouseUp(evt, button), TrickleDown.TrickleDown);
 
         return button;
     }
@@ -328,6 +359,275 @@ internal sealed class ProjectShortcutToolbar : VisualElement
         }
 
         return false;
+    }
+
+    private void OnShortcutMouseDown(MouseDownEvent evt, VisualElement button, FolderShortcutData shortcut)
+    {
+        if (evt.button != 0)
+        {
+            return;
+        }
+
+        if (_shortcutDragEventRoot != null)
+        {
+            UnregisterShortcutDragEvents();
+        }
+
+        _pressedShortcutGuid = shortcut.Guid;
+        _pressedShortcut = shortcut;
+        _pressedShortcutPosition = evt.mousePosition;
+        _pressedShortcutButton = (Button)button;
+        RegisterShortcutDragEvents(button);
+    }
+
+    private void OnShortcutMouseMove(MouseMoveEvent evt, VisualElement button, FolderShortcutData shortcut)
+    {
+        if (shortcut == null ||
+            string.IsNullOrEmpty(_pressedShortcutGuid) ||
+            !string.Equals(_pressedShortcutGuid, shortcut.Guid, System.StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        if (_draggedShortcutButton != null)
+        {
+            UpdateShortcutDrag(evt.mousePosition);
+            evt.StopPropagation();
+            return;
+        }
+
+        if ((evt.mousePosition - _pressedShortcutPosition).sqrMagnitude < ShortcutDragThreshold * ShortcutDragThreshold)
+        {
+            return;
+        }
+
+        BeginShortcutDrag((Button)button, shortcut, evt.mousePosition);
+        UpdateShortcutDrag(evt.mousePosition);
+        _suppressShortcutClick = true;
+        evt.StopPropagation();
+    }
+
+    private void OnShortcutMouseUp(MouseUpEvent evt, VisualElement button)
+    {
+        if (_pressedShortcutButton != null && button != _pressedShortcutButton)
+        {
+            return;
+        }
+
+        if (_draggedShortcutButton != null)
+        {
+            EndShortcutDrag();
+            evt.StopPropagation();
+        }
+
+        ResetShortcutPressState();
+    }
+
+    private void OnShortcutGlobalMouseMove(MouseMoveEvent evt)
+    {
+        if (_pressedShortcutButton == null || string.IsNullOrEmpty(_pressedShortcutGuid))
+        {
+            return;
+        }
+
+        OnShortcutMouseMove(evt, _pressedShortcutButton, _pressedShortcut);
+    }
+
+    private void OnShortcutGlobalMouseUp(MouseUpEvent evt)
+    {
+        if (_pressedShortcutButton == null)
+        {
+            return;
+        }
+
+        OnShortcutMouseUp(evt, _pressedShortcutButton);
+    }
+
+    private void RegisterShortcutDragEvents(VisualElement button)
+    {
+        _shortcutDragEventRoot = button.panel?.visualTree;
+        if (_shortcutDragEventRoot == null)
+        {
+            button.CaptureMouse();
+            return;
+        }
+
+        _shortcutDragEventRoot.RegisterCallback<MouseMoveEvent>(OnShortcutGlobalMouseMove, TrickleDown.TrickleDown);
+        _shortcutDragEventRoot.RegisterCallback<MouseUpEvent>(OnShortcutGlobalMouseUp, TrickleDown.TrickleDown);
+        button.CaptureMouse();
+    }
+
+    private void UnregisterShortcutDragEvents()
+    {
+        if (_shortcutDragEventRoot == null)
+        {
+            return;
+        }
+
+        _shortcutDragEventRoot.UnregisterCallback<MouseMoveEvent>(OnShortcutGlobalMouseMove, TrickleDown.TrickleDown);
+        _shortcutDragEventRoot.UnregisterCallback<MouseUpEvent>(OnShortcutGlobalMouseUp, TrickleDown.TrickleDown);
+        _shortcutDragEventRoot = null;
+    }
+
+    private void ResetShortcutPressState()
+    {
+        if (_pressedShortcutButton != null && _pressedShortcutButton.HasMouseCapture())
+        {
+            _pressedShortcutButton.ReleaseMouse();
+        }
+
+        UnregisterShortcutDragEvents();
+        _pressedShortcutGuid = string.Empty;
+        _pressedShortcut = null;
+        _pressedShortcutButton = null;
+    }
+
+    private void BeginShortcutDrag(Button button, FolderShortcutData shortcut, Vector2 panelPosition)
+    {
+        var content = _shortcutScroll.contentContainer;
+        var sourceIndex = content.IndexOf(button);
+        if (sourceIndex < 0)
+        {
+            return;
+        }
+
+        var buttonWorldBound = button.worldBound;
+        var contentPosition = content.WorldToLocal(buttonWorldBound.position);
+
+        _draggedShortcutButton = button;
+        _shortcutDragGrabOffsetX = panelPosition.x - buttonWorldBound.x;
+        _shortcutDragTop = contentPosition.y;
+
+        _shortcutPlaceholder = new VisualElement();
+        _shortcutPlaceholder.AddToClassList(ShortcutPlaceholderClassName);
+        _shortcutPlaceholder.style.width = buttonWorldBound.width;
+        _shortcutPlaceholder.style.height = buttonWorldBound.height;
+        _shortcutPlaceholder.style.minWidth = buttonWorldBound.width;
+        _shortcutPlaceholder.style.marginRight = 4f;
+        _shortcutPlaceholder.style.borderBottomWidth = 1f;
+        _shortcutPlaceholder.style.borderTopWidth = 1f;
+        _shortcutPlaceholder.style.borderLeftWidth = 1f;
+        _shortcutPlaceholder.style.borderRightWidth = 1f;
+        _shortcutPlaceholder.style.borderBottomColor = new Color(1f, 1f, 1f, 0.28f);
+        _shortcutPlaceholder.style.borderTopColor = new Color(1f, 1f, 1f, 0.28f);
+        _shortcutPlaceholder.style.borderLeftColor = new Color(1f, 1f, 1f, 0.28f);
+        _shortcutPlaceholder.style.borderRightColor = new Color(1f, 1f, 1f, 0.28f);
+        _shortcutPlaceholder.style.borderTopLeftRadius = 5f;
+        _shortcutPlaceholder.style.borderTopRightRadius = 5f;
+        _shortcutPlaceholder.style.borderBottomLeftRadius = 5f;
+        _shortcutPlaceholder.style.borderBottomRightRadius = 5f;
+        _shortcutPlaceholder.style.backgroundColor = new Color(1f, 1f, 1f, 0.08f);
+
+        content.Remove(button);
+        content.Insert(sourceIndex, _shortcutPlaceholder);
+        content.Add(button);
+
+        button.style.position = Position.Absolute;
+        button.style.width = buttonWorldBound.width;
+        button.style.height = buttonWorldBound.height;
+        button.style.minWidth = buttonWorldBound.width;
+        button.style.left = contentPosition.x;
+        button.style.top = _shortcutDragTop;
+        button.style.marginRight = 0f;
+        button.style.opacity = 0.92f;
+        button.BringToFront();
+    }
+
+    private void UpdateShortcutDrag(Vector2 panelPosition)
+    {
+        var content = _shortcutScroll.contentContainer;
+        if (_draggedShortcutButton == null || _shortcutPlaceholder == null)
+        {
+            return;
+        }
+
+        var localPosition = content.WorldToLocal(panelPosition);
+        var width = _draggedShortcutButton.worldBound.width;
+        var viewportMaxX = _shortcutScroll.worldBound.xMax - content.worldBound.x;
+        var maxLeft = Mathf.Max(0f, viewportMaxX - width);
+        var left = Mathf.Clamp(localPosition.x - _shortcutDragGrabOffsetX, 0f, maxLeft);
+        _draggedShortcutButton.style.left = left;
+        _draggedShortcutButton.style.top = _shortcutDragTop;
+
+        var mouseX = localPosition.x;
+        var placeholderIndex = GetPlaceholderTargetIndex(mouseX);
+        if (placeholderIndex < 0)
+        {
+            return;
+        }
+
+        var currentIndex = content.IndexOf(_shortcutPlaceholder);
+        if (currentIndex == placeholderIndex)
+        {
+            return;
+        }
+
+        content.Remove(_shortcutPlaceholder);
+        if (placeholderIndex > currentIndex)
+        {
+            placeholderIndex--;
+        }
+
+        content.Insert(Mathf.Clamp(placeholderIndex, 0, content.childCount), _shortcutPlaceholder);
+    }
+
+    private int GetPlaceholderTargetIndex(float contentLocalMouseX)
+    {
+        var content = _shortcutScroll.contentContainer;
+
+        for (var index = 0; index < content.childCount; index++)
+        {
+            var child = content[index];
+            if (child == _draggedShortcutButton || child == _shortcutPlaceholder)
+            {
+                continue;
+            }
+
+            if (contentLocalMouseX < child.layout.center.x)
+            {
+                return index;
+            }
+        }
+
+        var draggedIndex = _draggedShortcutButton == null
+            ? content.childCount
+            : content.IndexOf(_draggedShortcutButton);
+        return draggedIndex < 0 ? content.childCount : draggedIndex;
+    }
+
+    private void EndShortcutDrag()
+    {
+        var button = _draggedShortcutButton;
+        var placeholder = _shortcutPlaceholder;
+        var guid = _pressedShortcutGuid;
+        var content = _shortcutScroll.contentContainer;
+
+        _draggedShortcutButton = null;
+        _shortcutPlaceholder = null;
+
+        if (button == null || placeholder == null)
+        {
+            _suppressShortcutClick = false;
+            return;
+        }
+
+        var targetIndex = content.IndexOf(placeholder);
+
+        content.Remove(button);
+        content.Remove(placeholder);
+
+        button.style.position = Position.Relative;
+        button.style.left = StyleKeyword.Auto;
+        button.style.top = StyleKeyword.Auto;
+        button.style.width = StyleKeyword.Auto;
+        button.style.minWidth = StyleKeyword.Auto;
+        button.style.marginRight = 4f;
+        button.style.opacity = 1f;
+
+        if (!FolderShortcutStorage.MoveShortcut(guid, targetIndex))
+        {
+            RebuildShortcutButtons();
+        }
     }
 }
 }

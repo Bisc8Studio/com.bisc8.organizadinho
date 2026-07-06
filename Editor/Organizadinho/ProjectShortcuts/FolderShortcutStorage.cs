@@ -70,6 +70,46 @@ internal static class FolderShortcutStorage
         return false;
     }
 
+    internal static bool MoveShortcut(string guid, int targetIndex)
+    {
+        EnsureLoaded();
+
+        if (string.IsNullOrEmpty(guid))
+        {
+            return false;
+        }
+
+        var sourceIndex = -1;
+        for (var index = 0; index < Shortcuts.Count; index++)
+        {
+            if (!string.Equals(Shortcuts[index].Guid, guid, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            sourceIndex = index;
+            break;
+        }
+
+        if (sourceIndex < 0)
+        {
+            return false;
+        }
+
+        if (sourceIndex == targetIndex)
+        {
+            return false;
+        }
+
+        var shortcut = Shortcuts[sourceIndex];
+        Shortcuts.RemoveAt(sourceIndex);
+        targetIndex = Mathf.Clamp(targetIndex, 0, Shortcuts.Count);
+        Shortcuts.Insert(targetIndex, shortcut);
+        Save();
+        Changed?.Invoke();
+        return true;
+    }
+
     private static void EnsureLoaded()
     {
         if (_loaded)
