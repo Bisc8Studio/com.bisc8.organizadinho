@@ -4,7 +4,7 @@ Organizadinho is a Unity editor asset focused on improving Project and Hierarchy
 
 ## Version
 
-Current package version: `1.2.1`
+Current package version: `1.3.1`
 
 ## Installation
 
