@@ -39,8 +39,10 @@ internal sealed class ProjectShortcutToolbar : VisualElement
         };
         _compactSearchButton.style.width = 86f;
         _compactSearchButton.style.minWidth = 86f;
+        _compactSearchButton.style.maxWidth = 86f;
         _compactSearchButton.style.height = 18f;
         _compactSearchButton.style.marginRight = 6f;
+        _compactSearchButton.style.overflow = Overflow.Hidden;
 
         _searchField = new ToolbarSearchField();
         _searchField.style.display = DisplayStyle.None;
@@ -49,6 +51,7 @@ internal sealed class ProjectShortcutToolbar : VisualElement
         _searchField.style.height = 18f;
         _searchField.style.marginRight = 6f;
         _searchField.RegisterValueChangedCallback(OnSearchChanged);
+        _searchField.RegisterCallback<KeyDownEvent>(OnSearchKeyDown, TrickleDown.TrickleDown);
         _searchField.RegisterCallback<FocusOutEvent>(OnSearchFocusOut);
 
         _shortcutScroll = new ScrollView(ScrollViewMode.Horizontal);
@@ -98,6 +101,19 @@ internal sealed class ProjectShortcutToolbar : VisualElement
         ProjectWindowIntegration.RequestSearchApply(_projectBrowser, _searchText);
     }
 
+    private void OnSearchKeyDown(KeyDownEvent evt)
+    {
+        if (evt.keyCode != KeyCode.Return && evt.keyCode != KeyCode.KeypadEnter)
+        {
+            return;
+        }
+
+        _searchText = _searchField.value ?? string.Empty;
+        UpdateCompactSearchLabel();
+        ProjectWindowIntegration.RequestSearchApply(_projectBrowser, _searchText);
+        evt.StopPropagation();
+    }
+
     private void OnSearchFocusOut(FocusOutEvent evt)
     {
         CollapseSearch();
@@ -130,14 +146,17 @@ internal sealed class ProjectShortcutToolbar : VisualElement
         if (string.IsNullOrWhiteSpace(_searchText))
         {
             _compactSearchButton.text = "Search";
+            _compactSearchButton.tooltip = string.Empty;
             return;
         }
 
-        const int maxLength = 16;
+        const int maxLength = 12;
+        const string suffix = "...";
         var value = _searchText.Length > maxLength
-            ? _searchText.Substring(0, maxLength - 1) + "..."
+            ? _searchText.Substring(0, maxLength - suffix.Length) + suffix
             : _searchText;
         _compactSearchButton.text = value;
+        _compactSearchButton.tooltip = _searchText;
     }
 
     private void RebuildShortcutButtons()
