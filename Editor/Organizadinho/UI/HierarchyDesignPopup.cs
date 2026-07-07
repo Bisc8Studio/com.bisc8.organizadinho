@@ -41,6 +41,7 @@ public class HierarchyDesignPopup : PopupWindowContent
         float h = 8f;
         h += ln + 2f;
         h += ln + 4f;
+        h += ln + 4f;
 
         if (_hd != null && _hd.isOrganizer)
         {
@@ -68,6 +69,14 @@ public class HierarchyDesignPopup : PopupWindowContent
     {
         GUILayout.Space(4f);
         EditorGUILayout.LabelField("Organizer  " + _go.name, EditorStyles.boldLabel);
+        DrawHorizontalRule();
+        if (GUILayout.Button("Unity Color Settings", GUILayout.Height(22f)))
+        {
+            OrganizadinhoSettingsWindow.Open();
+            editorWindow?.Close();
+            return;
+        }
+
         DrawHorizontalRule();
 
         EditorGUI.BeginChangeCheck();

@@ -8,11 +8,11 @@ namespace Organizadinho.Editor.Settings
     internal sealed class OrganizadinhoSettingsWindow : EditorWindow
     {
         private const float MinWindowWidth = 340f;
-        private const float MinWindowHeight = 230f;
+        private const float MinWindowHeight = 320f;
         private const float PalettePreviewWidth = 170f;
 
         [MenuItem("Organizadinho/Settings")]
-        private static void Open()
+        internal static void Open()
         {
             var window = GetWindow<OrganizadinhoSettingsWindow>("Organizadinho");
             window.minSize = new Vector2(MinWindowWidth, MinWindowHeight);
@@ -67,12 +67,36 @@ namespace Organizadinho.Editor.Settings
                 OrganizadinhoUserPreferences.EnableProjectToolbar = enableToolbar;
             }
 
+            DrawHorizontalRule();
+
+            EditorGUILayout.LabelField("Unity Color Test", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "Experimental local tint over Unity editor windows. It does not change Unity's native skin files.",
+                MessageType.Warning);
+
+            EditorGUI.BeginChangeCheck();
+            var enableUnityTint = EditorGUILayout.Toggle("Tint Unity editor", OrganizadinhoUserPreferences.EnableUnityEditorTint);
+            using (new EditorGUI.DisabledScope(!enableUnityTint))
+            {
+                var tintColor = EditorGUILayout.ColorField("Tint color", OrganizadinhoUserPreferences.UnityEditorTintColor);
+                var tintStrength = EditorGUILayout.Slider("Tint strength", OrganizadinhoUserPreferences.UnityEditorTintStrength, 0.02f, 0.35f);
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    OrganizadinhoUserPreferences.EnableUnityEditorTint = enableUnityTint;
+                    OrganizadinhoUserPreferences.UnityEditorTintColor = tintColor;
+                    OrganizadinhoUserPreferences.UnityEditorTintStrength = tintStrength;
+                    UnityEditorTint.ApplyToOpenWindows();
+                }
+            }
+
             GUILayout.FlexibleSpace();
             DrawHorizontalRule();
 
             if (GUILayout.Button("Reset Local Settings", GUILayout.Height(24f)))
             {
                 OrganizadinhoUserPreferences.ResetDefaults();
+                UnityEditorTint.ApplyToOpenWindows();
             }
         }
 
