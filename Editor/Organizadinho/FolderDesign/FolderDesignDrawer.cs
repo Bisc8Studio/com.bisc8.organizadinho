@@ -23,8 +23,7 @@ public static class FolderDesignDrawer
         if (!AssetDatabase.IsValidFolder(path))
             return;
 
-        if (Event.current.type == EventType.MouseDown &&
-            Event.current.alt &&
+        if (OrganizadinhoUserPreferences.MatchesPopupShortcut(Event.current) &&
             selectionRect.Contains(Event.current.mousePosition))
         {
             var window = EditorWindow.mouseOverWindow ?? EditorWindow.focusedWindow;

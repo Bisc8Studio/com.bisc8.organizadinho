@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using Organizadinho.Editor.Settings;
 using Organizadinho.Editor.UI;
 using Organizadinho.Runtime;
 
@@ -21,7 +22,7 @@ public class HierarchyDesignEditor
         if (currentEvent == null)
             return;
 
-        if (currentEvent.type == EventType.MouseDown && currentEvent.alt && currentEvent.button == 0)
+        if (OrganizadinhoUserPreferences.MatchesPopupShortcut(currentEvent))
         {
 #pragma warning disable 0618
             GameObject obj = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
