@@ -10,6 +10,37 @@ namespace Organizadinho.Editor.Settings
         private const float MinWindowWidth = 340f;
         private const float MinWindowHeight = 230f;
         private const float PalettePreviewWidth = 170f;
+        private static readonly EventModifiers[] ShortcutModifierOptions =
+        {
+            EventModifiers.Alt,
+            EventModifiers.Control,
+            EventModifiers.Shift,
+            EventModifiers.Alt | EventModifiers.Control,
+            EventModifiers.Alt | EventModifiers.Shift,
+            EventModifiers.Control | EventModifiers.Shift
+        };
+
+        private static readonly string[] ShortcutModifierLabels =
+        {
+            "Alt",
+            "Ctrl",
+            "Shift",
+            "Alt + Ctrl",
+            "Alt + Shift",
+            "Ctrl + Shift"
+        };
+
+        private static readonly int[] ShortcutMouseButtonOptions =
+        {
+            0,
+            1
+        };
+
+        private static readonly string[] ShortcutMouseButtonLabels =
+        {
+            "Left Click",
+            "Right Click"
+        };
 
         [MenuItem("Organizadinho/Settings")]
         private static void Open()
@@ -47,6 +78,24 @@ namespace Organizadinho.Editor.Settings
                 OrganizadinhoUserPreferences.ShowPastelPalette = showPastel;
                 OrganizadinhoUserPreferences.ShowVibrantPalette = showVibrant;
                 OrganizadinhoUserPreferences.ShowCustomColor = showCustom;
+            }
+
+            DrawHorizontalRule();
+
+            EditorGUILayout.LabelField("Popup Shortcut", EditorStyles.boldLabel);
+            EditorGUI.BeginChangeCheck();
+            var modifierIndex = EditorGUILayout.Popup(
+                "Keyboard",
+                GetShortcutModifierIndex(OrganizadinhoUserPreferences.ShortcutModifiers),
+                ShortcutModifierLabels);
+            var mouseButtonIndex = EditorGUILayout.Popup(
+                "Mouse",
+                GetShortcutMouseButtonIndex(OrganizadinhoUserPreferences.ShortcutMouseButton),
+                ShortcutMouseButtonLabels);
+            if (EditorGUI.EndChangeCheck())
+            {
+                OrganizadinhoUserPreferences.ShortcutModifiers = ShortcutModifierOptions[modifierIndex];
+                OrganizadinhoUserPreferences.ShortcutMouseButton = ShortcutMouseButtonOptions[mouseButtonIndex];
             }
 
             DrawHorizontalRule();
@@ -116,6 +165,35 @@ namespace Organizadinho.Editor.Settings
             }
 
             return value;
+        }
+
+        private static int GetShortcutModifierIndex(EventModifiers modifiers)
+        {
+            modifiers &= OrganizadinhoUserPreferences.ShortcutModifierMask;
+            for (var index = 0; index < ShortcutModifierOptions.Length; index++)
+            {
+                if (ShortcutModifierOptions[index] == modifiers)
+                {
+                    return index;
+                }
+            }
+
+            OrganizadinhoUserPreferences.ShortcutModifiers = OrganizadinhoUserPreferences.DefaultShortcutModifiers;
+            return 0;
+        }
+
+        private static int GetShortcutMouseButtonIndex(int mouseButton)
+        {
+            for (var index = 0; index < ShortcutMouseButtonOptions.Length; index++)
+            {
+                if (ShortcutMouseButtonOptions[index] == mouseButton)
+                {
+                    return index;
+                }
+            }
+
+            OrganizadinhoUserPreferences.ShortcutMouseButton = OrganizadinhoUserPreferences.DefaultShortcutMouseButton;
+            return 0;
         }
     }
 }

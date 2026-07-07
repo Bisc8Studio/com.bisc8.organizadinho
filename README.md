@@ -4,7 +4,7 @@ Organizadinho is a Unity editor asset focused on improving Project and Hierarchy
 
 ## Version
 
-Current package version: `1.3.2`
+Current package version: `1.3.3`
 
 ## Installation
 
@@ -24,7 +24,7 @@ Current package version: `1.3.2`
 
 ## Folder Styling
 
-- Use `Alt + Click` on a folder in the Project window to open the FolderDesign popup.
+- Use the configured keyboard and mouse shortcut, by default `Alt + Left Click`, on a folder in the Project window to open the FolderDesign popup.
 - Apply a base color, white, or black style.
 - Enable propagation to apply the folder color to child folders.
 - Empty folders preserve an empty-folder shape while still using the selected color.
@@ -32,7 +32,7 @@ Current package version: `1.3.2`
 
 ## Hierarchy Styling
 
-- Use `Alt + Click` on a GameObject in the Hierarchy, or use the row dot, to open the Hierarchy organizer popup.
+- Use the configured keyboard and mouse shortcut, by default `Alt + Left Click`, on a GameObject in the Hierarchy, or use the row dot, to open the Hierarchy organizer popup.
 - Mark a GameObject as an organizer to draw a custom row in the Hierarchy.
 - Customize color, font, font size, and icon.
 - Enable child color propagation to visually group descendants.
