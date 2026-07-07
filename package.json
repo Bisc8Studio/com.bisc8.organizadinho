@@ -1,10 +1,18 @@
-{
-  "name": "com.bisc8.organizadinho",
+﻿{
+  "name": "com.erased.unityorganizer",
   "version": "1.3.3",
-  "displayName": "Organizadinho",
-  "description": "Improves Unity Project and Hierarchy navigation and visualization.",
+  "displayName": "Unity Organizer",
+  "description": "Improves Unity Project and Hierarchy navigation and visualization with custom folder colors, hierarchy organizer rows, and project shortcuts.",
   "unity": "6000.3",
+  "keywords": [
+    "hierarchy",
+    "project window",
+    "folder color",
+    "organizer",
+    "productivity",
+    "editor tool"
+  ],
   "author": {
-    "name": "Bisc8"
+    "name": "Erased"
   }
 }
