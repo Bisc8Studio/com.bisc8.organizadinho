@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 using Organizadinho.Editor.Utilities;
 using Organizadinho.Runtime;
@@ -20,11 +21,12 @@ namespace Organizadinho.Editor.Storage
         public string iconGuid = "";
     }
 
-    [FilePath(ProjectSettingsAssetPath, FilePathAttribute.Location.ProjectFolder)]
-    public class FolderDesignStorage : ScriptableSingleton<FolderDesignStorage>
+    public class FolderDesignStorage : ScriptableObject
     {
         private const string ProjectSettingsAssetPath = "ProjectSettings/Organizadinho/FolderDesignStorage.asset";
         private const int CurrentVersion = 4;
+
+        private static FolderDesignStorage _instance;
 
         [SerializeField] public List<FolderDesignEntry> entries = new List<FolderDesignEntry>();
         [SerializeField] private int _storageVersion;
@@ -33,14 +35,30 @@ namespace Organizadinho.Editor.Storage
 
         public static FolderDesignStorage GetOrCreate()
         {
-            // ScriptableSingleton owns loading the file declared by FilePath. Loading this
-            // type again creates a second singleton instance and makes Unity log an error.
-            var storage = instance;
+            var storage = _instance ?? LoadOrCreate();
             if (storage.entries == null)
                 storage.entries = new List<FolderDesignEntry>();
 
             storage.EnsureEntryVersion();
             return storage;
+        }
+
+        private static FolderDesignStorage LoadOrCreate()
+        {
+            var loadedObjects = InternalEditorUtility.LoadSerializedFileAndForget(ProjectSettingsAssetPath);
+            for (var index = 0; index < loadedObjects.Length; index++)
+            {
+                var loadedStorage = loadedObjects[index] as FolderDesignStorage;
+                if (loadedStorage == null)
+                    continue;
+
+                _instance = loadedStorage;
+                return _instance;
+            }
+
+            _instance = CreateInstance<FolderDesignStorage>();
+            _instance.hideFlags = HideFlags.HideAndDontSave;
+            return _instance;
         }
 
         public FolderDesignEntry GetEntry(string folderGuid)
@@ -85,7 +103,10 @@ namespace Organizadinho.Editor.Storage
         private void SaveToProjectSettings()
         {
             EnsureProjectSettingsDirectoryExists();
-            Save(true);
+            InternalEditorUtility.SaveToSerializedFileAndForget(
+                new UnityEngine.Object[] { this },
+                ProjectSettingsAssetPath,
+                true);
         }
 
         private static void EnsureProjectSettingsDirectoryExists()
