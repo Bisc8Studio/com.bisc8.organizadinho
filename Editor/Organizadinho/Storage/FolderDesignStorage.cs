@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
-using UnityEditorInternal;
 using UnityEngine;
 using Organizadinho.Editor.Utilities;
 using Organizadinho.Runtime;
@@ -32,17 +31,16 @@ namespace Organizadinho.Editor.Storage
 
         public static event Action Changed;
 
-        private static bool _migrationChecked;
-
         public static FolderDesignStorage GetOrCreate()
         {
-            if (instance.entries == null)
-                instance.entries = new List<FolderDesignEntry>();
+            // ScriptableSingleton owns loading the file declared by FilePath. Loading this
+            // type again creates a second singleton instance and makes Unity log an error.
+            var storage = instance;
+            if (storage.entries == null)
+                storage.entries = new List<FolderDesignEntry>();
 
-            instance.RestoreProjectSettingsEntriesIfNeeded();
-            instance.MigrateLegacyEntriesIfNeeded();
-            instance.EnsureEntryVersion();
-            return instance;
+            storage.EnsureEntryVersion();
+            return storage;
         }
 
         public FolderDesignEntry GetEntry(string folderGuid)
@@ -99,68 +97,6 @@ namespace Organizadinho.Editor.Storage
             }
         }
 
-        private void RestoreProjectSettingsEntriesIfNeeded()
-        {
-            if (entries.Count > 0 || !File.Exists(ProjectSettingsAssetPath))
-            {
-                return;
-            }
-
-            var loadedObjects = InternalEditorUtility.LoadSerializedFileAndForget(ProjectSettingsAssetPath);
-            for (var index = 0; index < loadedObjects.Length; index++)
-            {
-                var loadedStorage = loadedObjects[index] as FolderDesignStorage;
-                if (loadedStorage == null || loadedStorage == this ||
-                    loadedStorage.entries == null || loadedStorage.entries.Count == 0)
-                {
-                    continue;
-                }
-
-                entries = CloneEntries(loadedStorage.entries);
-                _storageVersion = loadedStorage._storageVersion;
-                break;
-            }
-        }
-
-        private void MigrateLegacyEntriesIfNeeded()
-        {
-            if (_migrationChecked)
-            {
-                return;
-            }
-
-            _migrationChecked = true;
-
-            if (entries.Count > 0 && File.Exists(ProjectSettingsAssetPath))
-            {
-                return;
-            }
-
-            var guids = AssetDatabase.FindAssets("t:FolderDesignStorage");
-            for (var index = 0; index < guids.Length; index++)
-            {
-                var path = AssetDatabase.GUIDToAssetPath(guids[index]);
-                if (string.IsNullOrEmpty(path) ||
-                    path.StartsWith("ProjectSettings/", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                var legacyStorage = AssetDatabase.LoadAssetAtPath<FolderDesignStorage>(path);
-                if (legacyStorage == null || legacyStorage == this || legacyStorage.entries == null || legacyStorage.entries.Count == 0)
-                {
-                    continue;
-                }
-
-                entries = CloneEntries(legacyStorage.entries);
-
-                SaveToProjectSettings();
-                Changed?.Invoke();
-                EditorApplication.RepaintProjectWindow();
-                break;
-            }
-        }
-
         private void EnsureEntryVersion()
         {
             if (_storageVersion >= CurrentVersion)
@@ -206,35 +142,5 @@ namespace Organizadinho.Editor.Storage
             }
         }
 
-        private static List<FolderDesignEntry> CloneEntries(List<FolderDesignEntry> source)
-        {
-            var clonedEntries = new List<FolderDesignEntry>(source.Count);
-            for (var index = 0; index < source.Count; index++)
-            {
-                var sourceEntry = source[index];
-                if (sourceEntry == null)
-                {
-                    continue;
-                }
-
-                var customColor = sourceEntry.customColor.a <= 0f
-                    ? ColorPaletteUtility.GetBaseColor(OrganizadinhoColorMode.Pastel, ColorPaletteUtility.DefaultHue)
-                    : sourceEntry.customColor;
-                customColor.a = 1f;
-
-                clonedEntries.Add(new FolderDesignEntry
-                {
-                    guid = sourceEntry.guid,
-                    hasColor = sourceEntry.hasColor,
-                    propagateChildren = sourceEntry.propagateChildren,
-                    colorMode = sourceEntry.colorMode,
-                    hue = sourceEntry.hue,
-                    customColor = customColor,
-                    iconGuid = sourceEntry.iconGuid
-                });
-            }
-
-            return clonedEntries;
-        }
     }
 }
